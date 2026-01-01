@@ -1,0 +1,393 @@
+"""Base kernel protocol and abstract implementation.
+
+All kernel variants must implement the Kernel protocol. The BaseKernel
+provides common functionality that variants can extend.
+"""
+
+from abc import ABC, abstractmethod
+from typing import Optional
+
+from kernels.common.types import (
+    Decision,
+    EvidenceBundle,
+    KernelConfig,
+    KernelReceipt,
+    KernelRequest,
+    KernelState,
+    ReceiptStatus,
+    ToolCall,
+)
+from kernels.common.errors import (
+    AmbiguityError,
+    BootError,
+    JurisdictionError,
+    StateError,
+)
+from kernels.common.validate import validate_request, check_ambiguity
+from kernels.audit.ledger import AuditLedger
+from kernels.jurisdiction.policy import JurisdictionPolicy
+from kernels.jurisdiction.rules import evaluate_policy
+from kernels.state.machine import StateMachine
+from kernels.execution.tools import create_default_registry
+from kernels.execution.dispatcher import Dispatcher
+
+
+class Kernel(ABC):
+    """Protocol defining the kernel API surface.
+    
+    All kernel variants must implement these methods.
+    """
+
+    @abstractmethod
+    def boot(self, config: KernelConfig) -> None:
+        """Boot the kernel with configuration.
+        
+        Args:
+            config: Kernel configuration.
+            
+        Raises:
+            BootError: If boot fails.
+        """
+        ...
+
+    @abstractmethod
+    def get_state(self) -> KernelState:
+        """Get the current kernel state.
+        
+        Returns:
+            Current state.
+        """
+        ...
+
+    @abstractmethod
+    def submit(self, request: KernelRequest) -> KernelReceipt:
+        """Submit a request for processing.
+        
+        Args:
+            request: Request to process.
+            
+        Returns:
+            Receipt with processing result.
+        """
+        ...
+
+    @abstractmethod
+    def step(self) -> Optional[KernelReceipt]:
+        """Advance the kernel by one step.
+        
+        Returns:
+            Receipt if a step was taken, None if idle.
+        """
+        ...
+
+    @abstractmethod
+    def halt(self, reason: str) -> KernelReceipt:
+        """Halt the kernel.
+        
+        Args:
+            reason: Reason for halting.
+            
+        Returns:
+            Receipt confirming halt.
+        """
+        ...
+
+    @abstractmethod
+    def export_evidence(self) -> EvidenceBundle:
+        """Export the audit ledger as evidence.
+        
+        Returns:
+            Evidence bundle with full ledger.
+        """
+        ...
+
+
+class BaseKernel(Kernel):
+    """Base implementation with common kernel functionality.
+    
+    Variants extend this class and override specific behaviors.
+    """
+
+    def __init__(self) -> None:
+        """Initialize base kernel state."""
+        self._config: Optional[KernelConfig] = None
+        self._state_machine: Optional[StateMachine] = None
+        self._ledger: Optional[AuditLedger] = None
+        self._policy: Optional[JurisdictionPolicy] = None
+        self._dispatcher: Optional[Dispatcher] = None
+        self._pending_request: Optional[KernelRequest] = None
+        self._pending_decision: Optional[Decision] = None
+        self._pending_result: Optional[any] = None
+
+    @property
+    def config(self) -> KernelConfig:
+        """Return kernel configuration."""
+        if self._config is None:
+            raise StateError("Kernel not booted")
+        return self._config
+
+    @property
+    def policy(self) -> JurisdictionPolicy:
+        """Return jurisdiction policy."""
+        if self._policy is None:
+            raise StateError("Kernel not booted")
+        return self._policy
+
+    def set_policy(self, policy: JurisdictionPolicy) -> None:
+        """Set the jurisdiction policy.
+        
+        Args:
+            policy: Policy to use.
+        """
+        self._policy = policy
+
+    def boot(self, config: KernelConfig) -> None:
+        """Boot the kernel with configuration."""
+        if self._state_machine is not None and not self._state_machine.is_halted:
+            raise BootError("Kernel already booted")
+
+        self._config = config
+        self._state_machine = StateMachine(KernelState.BOOTING)
+        self._ledger = AuditLedger(config.kernel_id, config.variant)
+        self._policy = self._policy or JurisdictionPolicy.default()
+        self._dispatcher = Dispatcher(create_default_registry())
+
+        # Transition to IDLE
+        self._state_machine.transition(KernelState.IDLE)
+
+    def get_state(self) -> KernelState:
+        """Get the current kernel state."""
+        if self._state_machine is None:
+            return KernelState.BOOTING
+        return self._state_machine.state
+
+    def submit(self, request: KernelRequest) -> KernelReceipt:
+        """Submit a request for processing."""
+        if self._state_machine is None:
+            raise StateError("Kernel not booted")
+
+        self._state_machine.assert_not_halted()
+        self._state_machine.assert_state(KernelState.IDLE)
+
+        state_from = self._state_machine.state
+
+        # Transition to VALIDATING
+        self._state_machine.transition(KernelState.VALIDATING)
+
+        # Validate request structure
+        validation_errors = validate_request(request)
+        if validation_errors:
+            return self._deny_request(
+                request,
+                state_from,
+                f"Validation failed: {'; '.join(validation_errors)}",
+            )
+
+        # Check ambiguity
+        ambiguity_errors = check_ambiguity(
+            request,
+            max_intent_length=self.config.max_intent_length,
+            strict=self._is_strict_ambiguity(),
+        )
+        if ambiguity_errors:
+            if self.config.fail_closed:
+                return self._deny_request(
+                    request,
+                    state_from,
+                    f"Ambiguity detected: {'; '.join(ambiguity_errors)}",
+                )
+
+        # Transition to ARBITRATING
+        self._state_machine.transition(KernelState.ARBITRATING)
+
+        # Evaluate jurisdiction
+        if self.config.require_jurisdiction:
+            policy_result = evaluate_policy(request, self.policy)
+            if not policy_result.allowed:
+                return self._deny_request(
+                    request,
+                    state_from,
+                    f"Jurisdiction denied: {'; '.join(policy_result.violations)}",
+                )
+
+        # Check variant-specific requirements
+        variant_errors = self._check_variant_requirements(request)
+        if variant_errors:
+            return self._deny_request(
+                request,
+                state_from,
+                f"Variant requirements not met: {'; '.join(variant_errors)}",
+            )
+
+        # Decide: ALLOW
+        decision = Decision.ALLOW
+        tool_result = None
+
+        # Execute if tool_call present
+        if request.tool_call is not None:
+            self._state_machine.transition(KernelState.EXECUTING)
+            exec_result = self._dispatcher.execute(request.tool_call)
+            if not exec_result.success:
+                return self._fail_request(
+                    request,
+                    state_from,
+                    f"Tool execution failed: {exec_result.error}",
+                )
+            tool_result = exec_result.result
+
+        # Audit
+        self._state_machine.transition(KernelState.AUDITING)
+
+        tool_name = None
+        if request.tool_call is not None:
+            if isinstance(request.tool_call, ToolCall):
+                tool_name = request.tool_call.name
+            else:
+                tool_name = request.tool_call.get("name")
+
+        entry = self._ledger.append(
+            request_id=request.request_id,
+            actor=request.actor,
+            intent=request.intent,
+            decision=decision,
+            state_from=state_from,
+            state_to=KernelState.IDLE,
+            ts_ms=self.config.clock.now_ms(),
+            tool_name=tool_name,
+            params=request.params,
+            evidence=request.evidence,
+        )
+
+        # Return to IDLE
+        self._state_machine.transition(KernelState.IDLE)
+
+        return KernelReceipt(
+            request_id=request.request_id,
+            status=ReceiptStatus.ACCEPTED,
+            state_from=state_from,
+            state_to=KernelState.IDLE,
+            ts_ms=self.config.clock.now_ms(),
+            decision=decision,
+            evidence_hash=entry.entry_hash,
+            tool_result=tool_result,
+        )
+
+    def step(self) -> Optional[KernelReceipt]:
+        """Advance the kernel by one step."""
+        # Base implementation: no pending work
+        return None
+
+    def halt(self, reason: str) -> KernelReceipt:
+        """Halt the kernel."""
+        if self._state_machine is None:
+            raise StateError("Kernel not booted")
+
+        state_from = self._state_machine.state
+        self._state_machine.halt()
+
+        # Audit the halt
+        entry = self._ledger.append(
+            request_id="HALT",
+            actor="SYSTEM",
+            intent=reason,
+            decision=Decision.HALT,
+            state_from=state_from,
+            state_to=KernelState.HALTED,
+            ts_ms=self.config.clock.now_ms(),
+        )
+
+        return KernelReceipt(
+            request_id="HALT",
+            status=ReceiptStatus.ACCEPTED,
+            state_from=state_from,
+            state_to=KernelState.HALTED,
+            ts_ms=self.config.clock.now_ms(),
+            decision=Decision.HALT,
+            evidence_hash=entry.entry_hash,
+        )
+
+    def export_evidence(self) -> EvidenceBundle:
+        """Export the audit ledger as evidence."""
+        if self._ledger is None:
+            raise StateError("Kernel not booted")
+        return self._ledger.export(self.config.clock.now_ms())
+
+    def _deny_request(
+        self,
+        request: KernelRequest,
+        state_from: KernelState,
+        error: str,
+    ) -> KernelReceipt:
+        """Create a DENY receipt and audit entry."""
+        # Transition to AUDITING
+        if self._state_machine.state != KernelState.AUDITING:
+            self._state_machine.transition(KernelState.AUDITING)
+
+        entry = self._ledger.append(
+            request_id=request.request_id,
+            actor=request.actor,
+            intent=request.intent,
+            decision=Decision.DENY,
+            state_from=state_from,
+            state_to=KernelState.IDLE,
+            ts_ms=self.config.clock.now_ms(),
+            error=error,
+        )
+
+        # Return to IDLE
+        self._state_machine.transition(KernelState.IDLE)
+
+        return KernelReceipt(
+            request_id=request.request_id,
+            status=ReceiptStatus.REJECTED,
+            state_from=state_from,
+            state_to=KernelState.IDLE,
+            ts_ms=self.config.clock.now_ms(),
+            decision=Decision.DENY,
+            error=error,
+            evidence_hash=entry.entry_hash,
+        )
+
+    def _fail_request(
+        self,
+        request: KernelRequest,
+        state_from: KernelState,
+        error: str,
+    ) -> KernelReceipt:
+        """Create a FAILED receipt and audit entry."""
+        # Transition to AUDITING
+        if self._state_machine.state != KernelState.AUDITING:
+            self._state_machine.transition(KernelState.AUDITING)
+
+        entry = self._ledger.append(
+            request_id=request.request_id,
+            actor=request.actor,
+            intent=request.intent,
+            decision=Decision.DENY,
+            state_from=state_from,
+            state_to=KernelState.IDLE,
+            ts_ms=self.config.clock.now_ms(),
+            error=error,
+        )
+
+        # Return to IDLE
+        self._state_machine.transition(KernelState.IDLE)
+
+        return KernelReceipt(
+            request_id=request.request_id,
+            status=ReceiptStatus.FAILED,
+            state_from=state_from,
+            state_to=KernelState.IDLE,
+            ts_ms=self.config.clock.now_ms(),
+            decision=Decision.DENY,
+            error=error,
+            evidence_hash=entry.entry_hash,
+        )
+
+    def _is_strict_ambiguity(self) -> bool:
+        """Return whether strict ambiguity checking is enabled."""
+        return True
+
+    def _check_variant_requirements(self, request: KernelRequest) -> list[str]:
+        """Check variant-specific requirements. Override in variants."""
+        return []

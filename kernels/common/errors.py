@@ -89,3 +89,24 @@ class AuditError(KernelError):
     """
 
     pass
+
+
+class ValidationError(KernelError):
+    """Raised when request validation fails.
+    
+    Validation errors occur when a request does not meet the required
+    schema or format. This includes missing fields, invalid types, or
+    constraint violations.
+    """
+
+    pass
+
+
+class ExecutionError(KernelError):
+    """Raised when tool execution fails.
+    
+    Execution errors occur during the execution phase when a tool
+    encounters an error during operation.
+    """
+
+    pass

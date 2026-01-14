@@ -58,3 +58,23 @@ def iso_to_timestamp(iso_str: str) -> int:
     import datetime
     dt = datetime.datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
     return int(dt.timestamp() * 1000)
+
+
+def monotonic_ms() -> int:
+    """Get monotonic time in milliseconds.
+    
+    Returns:
+        Current monotonic time in milliseconds.
+    """
+    import time
+    return int(time.monotonic() * 1000)
+
+
+def now_ms() -> int:
+    """Get current wall clock time in milliseconds.
+    
+    Returns:
+        Current time in milliseconds since epoch.
+    """
+    import time
+    return int(time.time() * 1000)

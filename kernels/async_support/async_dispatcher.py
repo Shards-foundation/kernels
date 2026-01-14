@@ -1,0 +1,262 @@
+"""
+KERNELS Async Dispatcher
+
+Provides async tool execution capabilities.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from typing import Any, Callable, Dict, Optional, Awaitable, Union
+from dataclasses import dataclass, field
+
+from kernels.common.types import ToolCall
+from kernels.common.errors import ExecutionError
+
+
+@dataclass
+class AsyncToolResult:
+    """Result from async tool execution."""
+    success: bool
+    result: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+    duration_ms: int = 0
+
+
+class AsyncToolRegistry:
+    """
+    Registry for async tools.
+    
+    Supports both sync and async tool functions.
+    """
+    
+    def __init__(self):
+        self._tools: Dict[str, Callable] = {}
+        self._metadata: Dict[str, Dict[str, Any]] = {}
+    
+    def register(
+        self,
+        name: str,
+        description: str = "",
+        params_schema: Optional[Dict] = None,
+    ) -> Callable:
+        """
+        Decorator to register a tool.
+        
+        Args:
+            name: Tool name
+            description: Tool description
+            params_schema: JSON schema for parameters
+            
+        Returns:
+            Decorator function
+        """
+        def decorator(fn: Callable) -> Callable:
+            self._tools[name] = fn
+            self._metadata[name] = {
+                "name": name,
+                "description": description,
+                "params_schema": params_schema or {},
+                "is_async": asyncio.iscoroutinefunction(fn),
+            }
+            return fn
+        return decorator
+    
+    def register_tool(
+        self,
+        name: str,
+        fn: Callable,
+        description: str = "",
+        params_schema: Optional[Dict] = None,
+    ) -> None:
+        """
+        Register a tool directly.
+        
+        Args:
+            name: Tool name
+            fn: Tool function
+            description: Tool description
+            params_schema: JSON schema for parameters
+        """
+        self._tools[name] = fn
+        self._metadata[name] = {
+            "name": name,
+            "description": description,
+            "params_schema": params_schema or {},
+            "is_async": asyncio.iscoroutinefunction(fn),
+        }
+    
+    def get(self, name: str) -> Optional[Callable]:
+        """Get a tool by name."""
+        return self._tools.get(name)
+    
+    def get_metadata(self, name: str) -> Optional[Dict[str, Any]]:
+        """Get tool metadata."""
+        return self._metadata.get(name)
+    
+    def list_tools(self) -> list[str]:
+        """List all registered tool names."""
+        return list(self._tools.keys())
+    
+    def has_tool(self, name: str) -> bool:
+        """Check if a tool is registered."""
+        return name in self._tools
+
+
+class AsyncDispatcher:
+    """
+    Async dispatcher for tool execution.
+    
+    Handles both sync and async tools, with timeout
+    and error handling.
+    """
+    
+    def __init__(
+        self,
+        registry: AsyncToolRegistry,
+        default_timeout: float = 30.0,
+    ):
+        self.registry = registry
+        self.default_timeout = default_timeout
+    
+    async def dispatch(
+        self,
+        tool_call: ToolCall,
+        timeout: Optional[float] = None,
+    ) -> AsyncToolResult:
+        """
+        Dispatch a tool call for execution.
+        
+        Args:
+            tool_call: The tool call to execute
+            timeout: Timeout in seconds (uses default if not specified)
+            
+        Returns:
+            AsyncToolResult with execution result
+        """
+        import time
+        start = time.monotonic()
+        timeout = timeout or self.default_timeout
+        
+        # Get tool
+        tool_fn = self.registry.get(tool_call.name)
+        if not tool_fn:
+            return AsyncToolResult(
+                success=False,
+                error=f"Tool not found: {tool_call.name}",
+            )
+        
+        try:
+            # Execute with timeout
+            if asyncio.iscoroutinefunction(tool_fn):
+                result = await asyncio.wait_for(
+                    tool_fn(tool_call.params),
+                    timeout=timeout,
+                )
+            else:
+                # Run sync function in executor
+                loop = asyncio.get_event_loop()
+                result = await asyncio.wait_for(
+                    loop.run_in_executor(None, tool_fn, tool_call.params),
+                    timeout=timeout,
+                )
+            
+            duration_ms = int((time.monotonic() - start) * 1000)
+            
+            return AsyncToolResult(
+                success=True,
+                result=result if isinstance(result, dict) else {"result": result},
+                duration_ms=duration_ms,
+            )
+            
+        except asyncio.TimeoutError:
+            duration_ms = int((time.monotonic() - start) * 1000)
+            return AsyncToolResult(
+                success=False,
+                error=f"Tool execution timed out after {timeout}s",
+                duration_ms=duration_ms,
+            )
+        except Exception as e:
+            duration_ms = int((time.monotonic() - start) * 1000)
+            return AsyncToolResult(
+                success=False,
+                error=str(e),
+                duration_ms=duration_ms,
+            )
+    
+    async def dispatch_batch(
+        self,
+        tool_calls: list[ToolCall],
+        concurrency: int = 10,
+        timeout: Optional[float] = None,
+    ) -> list[AsyncToolResult]:
+        """
+        Dispatch multiple tool calls with controlled concurrency.
+        
+        Args:
+            tool_calls: List of tool calls to execute
+            concurrency: Maximum concurrent executions
+            timeout: Timeout per tool call
+            
+        Returns:
+            List of results in same order as tool_calls
+        """
+        semaphore = asyncio.Semaphore(concurrency)
+        
+        async def dispatch_with_semaphore(tc: ToolCall) -> AsyncToolResult:
+            async with semaphore:
+                return await self.dispatch(tc, timeout)
+        
+        tasks = [dispatch_with_semaphore(tc) for tc in tool_calls]
+        return await asyncio.gather(*tasks)
+
+
+# Example async tools
+
+async def async_echo(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Async echo tool for testing."""
+    await asyncio.sleep(0.01)  # Simulate async work
+    return {"echoed": params.get("message", "")}
+
+
+async def async_delay(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Async delay tool for testing."""
+    delay = params.get("seconds", 1.0)
+    await asyncio.sleep(delay)
+    return {"delayed": delay}
+
+
+async def async_fetch(params: Dict[str, Any]) -> Dict[str, Any]:
+    """Async fetch tool (mock implementation)."""
+    url = params.get("url", "")
+    # In real implementation, use aiohttp
+    await asyncio.sleep(0.1)  # Simulate network delay
+    return {"url": url, "status": 200, "body": "mock response"}
+
+
+def create_default_async_registry() -> AsyncToolRegistry:
+    """Create a registry with default async tools."""
+    registry = AsyncToolRegistry()
+    
+    registry.register_tool(
+        "echo",
+        async_echo,
+        description="Echo a message",
+        params_schema={"message": {"type": "string"}},
+    )
+    
+    registry.register_tool(
+        "delay",
+        async_delay,
+        description="Delay for specified seconds",
+        params_schema={"seconds": {"type": "number"}},
+    )
+    
+    registry.register_tool(
+        "fetch",
+        async_fetch,
+        description="Fetch a URL",
+        params_schema={"url": {"type": "string"}},
+    )
+    
+    return registry

@@ -123,6 +123,11 @@ class VirtualClock:
         self._current_ms = ts_ms
 
 
+# Type aliases for SDK compatibility
+Request = KernelRequest
+Receipt = KernelReceipt
+
+
 @dataclass
 class KernelConfig:
     """Configuration for a kernel instance."""

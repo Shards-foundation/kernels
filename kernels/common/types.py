@@ -87,6 +87,12 @@ class AuditEntry:
     evidence_hash: Optional[str] = None
     error: Optional[str] = None
 
+    # Permit-related fields (added in v0.2.0)
+    permit_digest: Optional[str] = None
+    permit_verification: Optional[str] = None  # "ALLOW" | "DENY"
+    permit_denial_reasons: tuple[str, ...] = field(default_factory=tuple)
+    proposal_hash: Optional[str] = None
+
 
 @dataclass(frozen=True)
 class EvidenceBundle:

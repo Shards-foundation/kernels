@@ -78,9 +78,13 @@ class AuditLedger:
         params: Optional[dict[str, Any]] = None,
         evidence: Optional[str] = None,
         error: Optional[str] = None,
+        permit_digest: Optional[str] = None,
+        permit_verification: Optional[str] = None,
+        permit_denial_reasons: Optional[tuple[str, ...]] = None,
+        proposal_hash: Optional[str] = None,
     ) -> AuditEntry:
         """Append a new entry to the ledger.
-        
+
         Args:
             request_id: Unique request identifier.
             actor: Actor who submitted the request.
@@ -93,10 +97,14 @@ class AuditLedger:
             params: Parameters passed to tool, if any.
             evidence: Evidence string, if any.
             error: Error message, if any.
-            
+            permit_digest: Permit ID if permit was used (v0.2.0+).
+            permit_verification: "ALLOW" | "DENY" if permit was verified (v0.2.0+).
+            permit_denial_reasons: Reason codes if permit denied (v0.2.0+).
+            proposal_hash: Hash of proposal that initiated this request (v0.2.0+).
+
         Returns:
             The newly created audit entry.
-            
+
         Raises:
             AuditError: If entry creation fails.
         """
@@ -118,6 +126,10 @@ class AuditLedger:
                 params_hash=params_hash,
                 evidence_hash=evidence_hash,
                 error=error,
+                permit_digest=permit_digest,
+                permit_verification=permit_verification,
+                permit_denial_reasons=permit_denial_reasons,
+                proposal_hash=proposal_hash,
             )
 
             # Compute entry hash using chain
@@ -138,6 +150,10 @@ class AuditLedger:
                 params_hash=params_hash,
                 evidence_hash=evidence_hash,
                 error=error,
+                permit_digest=permit_digest,
+                permit_verification=permit_verification,
+                permit_denial_reasons=permit_denial_reasons or tuple(),
+                proposal_hash=proposal_hash,
             )
 
             # Append and update chain

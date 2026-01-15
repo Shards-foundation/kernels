@@ -39,6 +39,7 @@ class AuditLedger:
         self._variant = variant
         self._entries: list[AuditEntry] = []
         self._last_hash = genesis_hash()
+        self._next_seq = 0  # Monotonic sequence counter for deterministic ordering
 
     @property
     def kernel_id(self) -> str:
@@ -147,8 +148,12 @@ class AuditLedger:
             # Compute entry hash using chain
             entry_hash = compute_chain_hash(self._last_hash, entry_data)
 
+            # Assign sequence number
+            ledger_seq = self._next_seq
+
             # Create entry
             entry = AuditEntry(
+                ledger_seq=ledger_seq,
                 prev_hash=self._last_hash,
                 entry_hash=entry_hash,
                 ts_ms=ts_ms,
@@ -175,6 +180,7 @@ class AuditLedger:
             # Append and update chain
             self._entries.append(entry)
             self._last_hash = entry_hash
+            self._next_seq += 1  # Increment sequence counter
 
             return entry
 

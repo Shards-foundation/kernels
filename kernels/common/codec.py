@@ -125,6 +125,7 @@ def audit_entry_to_dict(entry: Any) -> dict[str, Any]:
         Dictionary representation of the entry.
     """
     result = {
+        "ledger_seq": entry.ledger_seq if hasattr(entry, "ledger_seq") else 0,
         "prev_hash": entry.prev_hash,
         "entry_hash": entry.entry_hash,
         "ts_ms": entry.ts_ms,

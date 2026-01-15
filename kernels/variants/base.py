@@ -163,7 +163,8 @@ class BaseKernel(Kernel):
         """Load ledger from evidence bundle and rebuild nonce registry.
 
         This enables cross-restart replay protection by reconstructing the
-        nonce registry from audit entries.
+        nonce registry from audit entries. Entries are processed in deterministic
+        order by ledger_seq to ensure consistent reconstruction.
 
         Args:
             evidence: Evidence bundle containing ledger entries.
@@ -174,14 +175,23 @@ class BaseKernel(Kernel):
         if self._ledger is None:
             raise StateError("Kernel not booted")
 
+        # Sort entries by ledger_seq for deterministic ordering
+        # This ensures tie-breaking when timestamps are identical
+        sorted_entries = sorted(evidence.ledger_entries, key=lambda e: e.ledger_seq)
+
         # Rebuild ledger
-        for entry in evidence.ledger_entries:
+        for entry in sorted_entries:
             # Re-add entry to ledger (this updates hash chain)
             self._ledger._entries.append(entry)
             self._ledger._last_hash = entry.entry_hash
 
+        # Restore sequence counter from last entry
+        if sorted_entries:
+            self._ledger._next_seq = sorted_entries[-1].ledger_seq + 1
+
         # Rebuild nonce registry from entries with permit verification
-        for entry in evidence.ledger_entries:
+        # Must process in ledger_seq order to correctly reconstruct use_count
+        for entry in sorted_entries:
             if (entry.permit_digest and
                 entry.permit_verification == "ALLOW" and
                 entry.permit_nonce and

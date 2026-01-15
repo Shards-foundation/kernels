@@ -392,6 +392,63 @@ def deterministic_nonce(proposal_hash: str, sequence: int) -> str:
     return hashlib.sha256(data).hexdigest()[:32]
 ```
 
+### 7.4 Nonce Semantics
+
+**Critical invariant:** Nonces are **per-permit-instance**, NOT per-use.
+
+A single permit with `max_executions=N` uses the **same nonce** for all N executions. The nonce uniquely identifies the permit instance, and the registry tracks `use_count` to enforce the execution limit.
+
+**Why this matters:**
+
+1. **Ledger-backed reconstruction:** After kernel restart, the nonce registry is rebuilt by replaying audit entries. Each ALLOW entry with the same nonce increments `use_count`.
+
+2. **Multi-use permits:** A permit with `max_executions=3` can be used 3 times with the same nonce. The 4th attempt is rejected as `REPLAY_DETECTED` because `use_count=3 >= max_executions=3`.
+
+3. **Cross-restart invariant:** Total accepted executions ≤ max_executions, even across restarts.
+
+**Reconstruction algorithm:**
+
+```python
+def rebuild_nonce_registry_from_ledger(ledger_entries: list[AuditEntry]) -> NonceRegistry:
+    """
+    Rebuild nonce registry from audit ledger entries.
+
+    Processes entries in deterministic order (by ledger_seq) to ensure
+    consistent use_count reconstruction.
+    """
+    registry = NonceRegistry()
+
+    # Sort by ledger_seq for deterministic ordering (timestamp ties are broken)
+    for entry in sorted(ledger_entries, key=lambda e: e.ledger_seq):
+        if entry.permit_verification == "ALLOW" and entry.permit_nonce:
+            # Reconstruct nonce usage by calling check_and_record
+            # This increments use_count for each ALLOW entry
+            registry.check_and_record(
+                nonce=entry.permit_nonce,
+                issuer=entry.permit_issuer,
+                subject=entry.permit_subject,
+                permit_id=entry.permit_digest,
+                max_executions=entry.permit_max_executions,
+                current_time_ms=entry.ts_ms,
+            )
+
+    return registry
+```
+
+**Storage requirements:**
+
+Audit entries must persist the following fields for nonce reconstruction:
+- `permit_nonce`: The nonce value
+- `permit_issuer`: Issuer identity (part of registry key)
+- `permit_subject`: Subject identity (part of registry key)
+- `permit_max_executions`: Maximum allowed uses
+- `permit_verification`: "ALLOW" or "DENY" (only ALLOW entries count)
+- `ledger_seq`: Monotonic sequence number for deterministic ordering
+
+**Deterministic ordering:**
+
+Entries are sorted by `ledger_seq` (not `ts_ms`) to prevent non-determinism when multiple entries have identical timestamps. This ensures reconstruction produces identical nonce registries across restarts.
+
 ---
 
 ## 8. CONSTRAINT ENFORCEMENT

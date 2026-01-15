@@ -73,6 +73,7 @@ class KernelReceipt:
 class AuditEntry:
     """A single entry in the append-only audit ledger."""
 
+    ledger_seq: int  # Monotonic sequence number for deterministic ordering
     prev_hash: str
     entry_hash: str
     ts_ms: int

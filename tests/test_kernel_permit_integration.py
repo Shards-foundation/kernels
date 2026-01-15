@@ -365,6 +365,180 @@ class TestPermitIntegrationCrossRestart(unittest.TestCase):
         final_entry = evidence2.ledger_entries[-1]
         self.assertIn("REPLAY_DETECTED", final_entry.permit_denial_reasons)
 
+    def test_multi_use_permit_across_restart_max_three(self) -> None:
+        """Multi-use permit (N=3): use twice, restart, use once more succeeds, fourth fails."""
+        clock = VirtualClock(initial_ms=1000)
+        config = KernelConfig(
+            kernel_id="test-kernel",
+            variant="strict",
+            clock=clock,
+        )
+
+        # First kernel instance
+        kernel1 = StrictKernel()
+        kernel1.boot(config)
+        kernel1.set_keyring(self.keyring)
+
+        # Build multi-use permit (max_executions=3)
+        builder = PermitBuilder()
+        permit = (
+            builder.issuer("operator1")
+            .subject("agent1")
+            .jurisdiction("default")
+            .action("echo")
+            .params({"text": "hello"})
+            .constraints({})
+            .max_executions(3)  # Allow 3 uses
+            .valid_from_ms(0)
+            .valid_until_ms(10000)
+            .evidence_hash("")
+            .proposal_hash("proposal-hash")
+            .build(self.keyring, "key1")
+        )
+
+        # Use 1: Should succeed
+        request1 = KernelRequest(
+            request_id="req-001",
+            ts_ms=1000,
+            actor="agent1",
+            intent="Echo hello",
+            tool_call=ToolCall(name="echo", params={"text": "hello"}),
+            params={"text": "hello"},
+        )
+        receipt1 = kernel1.submit(request1, permit_token=permit)
+        self.assertEqual(receipt1.decision, Decision.ALLOW)
+
+        # Use 2: Should succeed
+        clock.advance(100)
+        request2 = replace(request1, request_id="req-002", ts_ms=1100)
+        receipt2 = kernel1.submit(request2, permit_token=permit)
+        self.assertEqual(receipt2.decision, Decision.ALLOW)
+
+        # Export ledger and restart
+        evidence1 = kernel1.export_evidence()
+
+        # Second kernel instance with ledger restoration
+        kernel2 = StrictKernel()
+        kernel2.boot(config)
+        kernel2.set_keyring(self.keyring)
+        kernel2.load_ledger(evidence1)
+
+        # Use 3: Should succeed (within max_executions=3)
+        clock.advance(100)
+        request3 = replace(request1, request_id="req-003", ts_ms=1200)
+        receipt3 = kernel2.submit(request3, permit_token=permit)
+        self.assertEqual(receipt3.decision, Decision.ALLOW)
+
+        # Use 4: Should fail (exceeded max_executions=3)
+        clock.advance(100)
+        request4 = replace(request1, request_id="req-004", ts_ms=1300)
+        receipt4 = kernel2.submit(request4, permit_token=permit)
+        self.assertEqual(receipt4.status, ReceiptStatus.REJECTED)
+        self.assertEqual(receipt4.decision, Decision.DENY)
+
+        # Verify final ledger state
+        evidence2 = kernel2.export_evidence()
+        # Should have: req1 (ALLOW), req2 (ALLOW), req3 (ALLOW), req4 (DENY)
+        self.assertEqual(len(evidence2.ledger_entries), 4)
+        self.assertEqual(evidence2.ledger_entries[0].decision, Decision.ALLOW)
+        self.assertEqual(evidence2.ledger_entries[1].decision, Decision.ALLOW)
+        self.assertEqual(evidence2.ledger_entries[2].decision, Decision.ALLOW)
+        self.assertEqual(evidence2.ledger_entries[3].decision, Decision.DENY)
+        self.assertIn("REPLAY_DETECTED", evidence2.ledger_entries[3].permit_denial_reasons)
+
+    def test_multi_use_permit_use_count_reconstruction(self) -> None:
+        """Verify use_count is correctly reconstructed from ledger."""
+        clock = VirtualClock(initial_ms=1000)
+        config = KernelConfig(
+            kernel_id="test-kernel",
+            variant="strict",
+            clock=clock,
+        )
+
+        # First kernel instance
+        kernel1 = StrictKernel()
+        kernel1.boot(config)
+        kernel1.set_keyring(self.keyring)
+
+        # Build multi-use permit (max_executions=5)
+        builder = PermitBuilder()
+        permit = (
+            builder.issuer("operator1")
+            .subject("agent1")
+            .jurisdiction("default")
+            .action("echo")
+            .params({"text": "hello"})
+            .constraints({})
+            .max_executions(5)
+            .valid_from_ms(0)
+            .valid_until_ms(10000)
+            .evidence_hash("")
+            .proposal_hash("proposal-hash")
+            .build(self.keyring, "key1")
+        )
+
+        # Use permit 3 times in first instance
+        for i in range(3):
+            clock.advance(100)
+            request = KernelRequest(
+                request_id=f"req-{i:03d}",
+                ts_ms=clock.now_ms(),
+                actor="agent1",
+                intent="Echo hello",
+                tool_call=ToolCall(name="echo", params={"text": "hello"}),
+                params={"text": "hello"},
+            )
+            receipt = kernel1.submit(request, permit_token=permit)
+            self.assertEqual(receipt.decision, Decision.ALLOW, f"Use {i+1} should succeed")
+
+        # Export and restart
+        evidence1 = kernel1.export_evidence()
+        kernel2 = StrictKernel()
+        kernel2.boot(config)
+        kernel2.set_keyring(self.keyring)
+        kernel2.load_ledger(evidence1)
+
+        # Verify nonce registry was reconstructed with correct use_count
+        nonce_record = kernel2._nonce_registry.get_record(
+            nonce=permit.nonce,
+            issuer=permit.issuer,
+            subject=permit.subject,
+        )
+        self.assertIsNotNone(nonce_record)
+        self.assertEqual(nonce_record.use_count, 3, "use_count should be reconstructed as 3")
+
+        # Use permit 2 more times (should both succeed, reaching max_executions=5)
+        for i in range(3, 5):
+            clock.advance(100)
+            request = KernelRequest(
+                request_id=f"req-{i:03d}",
+                ts_ms=clock.now_ms(),
+                actor="agent1",
+                intent="Echo hello",
+                tool_call=ToolCall(name="echo", params={"text": "hello"}),
+                params={"text": "hello"},
+            )
+            receipt = kernel2.submit(request, permit_token=permit)
+            self.assertEqual(receipt.decision, Decision.ALLOW, f"Use {i+1} should succeed")
+
+        # Sixth use should fail
+        clock.advance(100)
+        request_final = KernelRequest(
+            request_id="req-final",
+            ts_ms=clock.now_ms(),
+            actor="agent1",
+            intent="Echo hello",
+            tool_call=ToolCall(name="echo", params={"text": "hello"}),
+            params={"text": "hello"},
+        )
+        receipt_final = kernel2.submit(request_final, permit_token=permit)
+        self.assertEqual(receipt_final.decision, Decision.DENY)
+
+        # Verify REPLAY_DETECTED in audit
+        evidence_final = kernel2.export_evidence()
+        final_entry = evidence_final.ledger_entries[-1]
+        self.assertIn("REPLAY_DETECTED", final_entry.permit_denial_reasons)
+
 
 class TestPermitIntegrationVariantSpecific(unittest.TestCase):
     """Test variant-specific permit policies."""

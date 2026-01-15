@@ -82,6 +82,10 @@ class AuditLedger:
         permit_verification: Optional[str] = None,
         permit_denial_reasons: Optional[tuple[str, ...]] = None,
         proposal_hash: Optional[str] = None,
+        permit_nonce: Optional[str] = None,
+        permit_issuer: Optional[str] = None,
+        permit_subject: Optional[str] = None,
+        permit_max_executions: Optional[int] = None,
     ) -> AuditEntry:
         """Append a new entry to the ledger.
 
@@ -101,6 +105,10 @@ class AuditLedger:
             permit_verification: "ALLOW" | "DENY" if permit was verified (v0.2.0+).
             permit_denial_reasons: Reason codes if permit denied (v0.2.0+).
             proposal_hash: Hash of proposal that initiated this request (v0.2.0+).
+            permit_nonce: Nonce from permit for ledger-backed replay protection (v0.2.0+).
+            permit_issuer: Issuer identity for nonce reconstruction (v0.2.0+).
+            permit_subject: Subject identity for nonce reconstruction (v0.2.0+).
+            permit_max_executions: Max executions for nonce reconstruction (v0.2.0+).
 
         Returns:
             The newly created audit entry.
@@ -130,6 +138,10 @@ class AuditLedger:
                 permit_verification=permit_verification,
                 permit_denial_reasons=permit_denial_reasons,
                 proposal_hash=proposal_hash,
+                permit_nonce=permit_nonce,
+                permit_issuer=permit_issuer,
+                permit_subject=permit_subject,
+                permit_max_executions=permit_max_executions,
             )
 
             # Compute entry hash using chain
@@ -154,6 +166,10 @@ class AuditLedger:
                 permit_verification=permit_verification,
                 permit_denial_reasons=permit_denial_reasons or tuple(),
                 proposal_hash=proposal_hash,
+                permit_nonce=permit_nonce,
+                permit_issuer=permit_issuer,
+                permit_subject=permit_subject,
+                permit_max_executions=permit_max_executions,
             )
 
             # Append and update chain

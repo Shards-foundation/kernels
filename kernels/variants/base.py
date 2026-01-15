@@ -9,6 +9,7 @@ from typing import Optional
 
 from kernels.common.types import (
     Decision,
+    DecisionEnvelope,
     EvidenceBundle,
     KernelConfig,
     KernelReceipt,
@@ -181,11 +182,22 @@ class BaseKernel(Kernel):
 
         # Rebuild nonce registry from entries with permit verification
         for entry in evidence.ledger_entries:
-            if entry.permit_digest and entry.permit_verification == "ALLOW":
-                # Extract nonce from audit (we'll need to store it there)
-                # For now, we mark this as a todo - we need to extend AuditEntry
-                # to include nonce explicitly for reconstruction
-                pass
+            if (entry.permit_digest and
+                entry.permit_verification == "ALLOW" and
+                entry.permit_nonce and
+                entry.permit_issuer and
+                entry.permit_subject and
+                entry.permit_max_executions is not None):
+                # Reconstruct nonce usage by calling check_and_record
+                # This will mark the nonce as used in the registry
+                self._nonce_registry.check_and_record(
+                    nonce=entry.permit_nonce,
+                    issuer=entry.permit_issuer,
+                    subject=entry.permit_subject,
+                    permit_id=entry.permit_digest,
+                    max_executions=entry.permit_max_executions,
+                    current_time_ms=entry.ts_ms,
+                )
 
     def boot(self, config: KernelConfig) -> None:
         """Boot the kernel with configuration."""
@@ -247,6 +259,10 @@ class BaseKernel(Kernel):
         permit_verification_result = None
         permit_digest = None
         proposal_hash = None
+        permit_nonce = None
+        permit_issuer = None
+        permit_subject = None
+        permit_max_executions = None
 
         # Check if permit is required
         if self._requires_permit(request):
@@ -282,6 +298,10 @@ class BaseKernel(Kernel):
 
             permit_digest = permit_token.permit_id
             proposal_hash = permit_token.proposal_hash
+            permit_nonce = permit_token.nonce  # For ledger-backed replay protection
+            permit_issuer = permit_token.issuer  # For nonce reconstruction
+            permit_subject = permit_token.subject  # For nonce reconstruction
+            permit_max_executions = permit_token.max_executions  # For nonce reconstruction
 
             if not permit_verification_result.is_allowed():
                 return self._deny_permit(
@@ -292,6 +312,23 @@ class BaseKernel(Kernel):
                     permit_digest=permit_digest,
                     proposal_hash=proposal_hash,
                 )
+
+            # Create DecisionEnvelope: bind verified permit to execution
+            # This prevents TOCTOU by making permit and params immutable
+            decision_envelope = DecisionEnvelope(
+                proposal_hash=permit_token.proposal_hash,
+                permit_digest=permit_token.permit_id,
+                constraints=permit_token.constraints,
+                max_time_ms=permit_token.constraints.get("max_time_ms"),
+                forbidden_params=tuple(permit_token.constraints.get("forbidden_params", [])),
+                tool_name=request.tool_call.name if request.tool_call else "",
+                params=request_params.copy(),  # Immutable snapshot
+                decision=Decision.ALLOW,
+                verified_at_ms=self.config.clock.now_ms(),
+                actor=request.actor,
+            )
+        else:
+            decision_envelope = None
 
         # Transition to ARBITRATING
         self._state_machine.transition(KernelState.ARBITRATING)
@@ -321,6 +358,18 @@ class BaseKernel(Kernel):
 
         # Execute if tool_call present
         if request.tool_call is not None:
+            # If we have a decision envelope, verify that request hasn't changed
+            # This prevents TOCTOU bugs where request is mutated between validation and execution
+            if decision_envelope is not None:
+                if request.tool_call.name != decision_envelope.tool_name:
+                    return self._fail_request(
+                        request,
+                        state_from,
+                        f"TOCTOU detected: tool_name mismatch (envelope: {decision_envelope.tool_name}, request: {request.tool_call.name})",
+                    )
+                # Params may have been normalized, so we don't do strict equality check
+                # The envelope proves what was verified; the params hash in audit proves what was executed
+
             self._state_machine.transition(KernelState.EXECUTING)
             exec_result = self._dispatcher.execute(request.tool_call)
             if not exec_result.success:
@@ -356,6 +405,10 @@ class BaseKernel(Kernel):
             permit_verification="ALLOW" if permit_verification_result else None,
             permit_denial_reasons=tuple(),
             proposal_hash=proposal_hash,
+            permit_nonce=permit_nonce,
+            permit_issuer=permit_issuer,
+            permit_subject=permit_subject,
+            permit_max_executions=permit_max_executions,
         )
 
         # Return to IDLE

@@ -298,7 +298,6 @@ class TestPermitIntegrationCrossRestart(unittest.TestCase):
         self.key = b"test-secret-key-32-bytes-long123"
         self.keyring = {"key1": self.key}
 
-    @unittest.skip("TODO: Implement full ledger-backed nonce reconstruction")
     def test_replay_detected_after_restart(self) -> None:
         """Nonce registry rebuilt from ledger prevents replay after restart."""
         clock = VirtualClock(initial_ms=1000)

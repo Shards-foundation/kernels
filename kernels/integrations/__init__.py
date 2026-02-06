@@ -13,6 +13,20 @@ from kernels.integrations.langchain_adapter import (
     LangChainToolResult,
     create_langchain_adapter,
 )
+from kernels.integrations.huggingface_adapter import (
+    HuggingFaceAdapter,
+    GovernedHFTool,
+    HFToolResult,
+    PermitInjector,
+    create_huggingface_adapter,
+)
+from kernels.integrations.generic_adapter import (
+    GenericAdapter,
+    MoltbookAdapter,
+    ToolExecutionResult,
+    create_generic_adapter,
+    create_moltbook_adapter,
+)
 
 __all__ = [
     "create_fastapi_app",
@@ -22,4 +36,14 @@ __all__ = [
     "GovernedTool",
     "LangChainToolResult",
     "create_langchain_adapter",
+    "HuggingFaceAdapter",
+    "GovernedHFTool",
+    "HFToolResult",
+    "PermitInjector",
+    "create_huggingface_adapter",
+    "GenericAdapter",
+    "MoltbookAdapter",
+    "ToolExecutionResult",
+    "create_generic_adapter",
+    "create_moltbook_adapter",
 ]

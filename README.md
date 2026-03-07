@@ -131,6 +131,19 @@ python -m kernels --help
 
 ---
 
+## Developer Commands
+
+```bash
+make install-dev
+make lint
+make typecheck
+make test-cov
+make smoke
+make security
+```
+
+---
+
 ## Specs + Docs
 
 **Specifications** (normative):

@@ -31,9 +31,9 @@ keywords = ["kernel", "control-plane", "deterministic", "audit", "ai-systems"]
 kernels = "kernels.__main__:main"
 
 [project.urls]
-Repository = "https://github.com/your-org/kernels"
-Documentation = "https://github.com/your-org/kernels/tree/main/docs"
-Changelog = "https://github.com/your-org/kernels/blob/main/CHANGELOG.md"
+Repository = "https://github.com/ayais12210-hub/kernels"
+Documentation = "https://github.com/ayais12210-hub/kernels/tree/main/docs"
+Changelog = "https://github.com/ayais12210-hub/kernels/blob/main/CHANGELOG.md"
 
 [tool.setuptools.dynamic]
 version = {attr = "kernels._version.__version__"}

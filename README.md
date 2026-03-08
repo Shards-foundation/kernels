@@ -1,5 +1,9 @@
 # KERNELS - Deterministic Control Planes for AI Systems
 
+[![PyPI version](https://img.shields.io/pypi/v/kernels.svg)](https://pypi.org/project/kernels/)
+[![CI](https://github.com/Shards-foundation/kernels/actions/workflows/ci.yml/badge.svg)](https://github.com/Shards-foundation/kernels/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/Shards-foundation/kernels/branch/main/graph/badge.svg)](https://codecov.io/gh/Shards-foundation/kernels)
+
 A **kernel** is a deterministic state machine that governs AI agent execution via **jurisdiction**, **fail-closed arbitration**, and an **append-only hash-chained audit ledger**.
 
 **Hard constraint:** no tool execution without an explicit `ALLOW`; no `ALLOW` without a committed audit decision.
@@ -117,10 +121,16 @@ Variants tune posture while preserving invariants:
 
 ---
 
+## Install from PyPI
+
+```bash
+python -m pip install kernels
+```
+
 ## Quickstart
 
 ```bash
-git clone https://github.com/ayais12210-hub/kernels.git
+git clone https://github.com/Shards-foundation/kernels.git
 cd kernels
 python -m pip install -e .
 python -m unittest discover -s tests -v

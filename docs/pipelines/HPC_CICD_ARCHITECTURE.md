@@ -90,7 +90,7 @@ Developer
 37. latency-analysis  
 38. memory-bandwidth-tests
 
-**Primary tools:** pytest-benchmark, nvprof/nsight, Airspeed Velocity.
+**Primary tools:** pytest-benchmark, nvprof, Nsight Systems, Nsight Compute, Airspeed Velocity.
 
 ### Layer 8 — Security
 
@@ -154,6 +154,18 @@ Use artifact-backed baseline comparison:
 3. Compare with a fixed threshold (default: 5% slowdown).
 4. Fail PR when threshold is exceeded.
 
+The 5% slowdown value is intended as a conservative default that works well for many
+numerical and GPU/CPU kernel workloads where benchmark noise is typically low but
+non-zero. Projects SHOULD tune this threshold based on:
+
+- The inherent variance of each benchmark (e.g., noisy integration tests may need a higher tolerance).
+- The business and latency criticality of the kernel (e.g., low-latency paths may warrant a stricter threshold).
+- The stability of the underlying hardware and environment (e.g., shared/cloud GPUs vs. dedicated machines).
+
+In practice, configure the threshold as a parameter in your CI (per-suite or per-benchmark)
+rather than hard-coding 5% globally, and document the chosen values and rationale in
+the repository (e.g., in `CONTRIBUTING.md` or a benchmarking README).
+
 ## 6) Hardware Validation Strategy
 
 Recommended dedicated GPU runner pools:
@@ -187,7 +199,7 @@ Alternative cloud-backed runner pools:
 Recommended minimum gate:
 
 ```bash
-pytest --cov=kernels --cov=implementations --cov-fail-under=85
+pytest --cov=kernels --cov-fail-under=85
 ```
 
 Raise the threshold for critical packages over time as flaky suites are removed.

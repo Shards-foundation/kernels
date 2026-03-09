@@ -90,7 +90,7 @@ Developer
 37. latency-analysis  
 38. memory-bandwidth-tests
 
-**Primary tools:** pytest-benchmark, nvprof/nsight, Airspeed Velocity.
+**Primary tools:** pytest-benchmark, nvprof, Nsight Systems, Nsight Compute, Airspeed Velocity.
 
 ### Layer 8 — Security
 

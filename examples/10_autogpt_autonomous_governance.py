@@ -45,7 +45,6 @@ Usage:
     python examples/10_autogpt_autonomous_governance.py
 """
 
-from typing import Dict, Any
 import json
 import os
 
@@ -62,7 +61,7 @@ from kernels.permits import PermitBuilder
 
 def execute_shell(command: str) -> str:
     """Execute shell command (CRITICAL RISK)."""
-    print(f"\n🚨 SHELL EXECUTION:")
+    print("\n🚨 SHELL EXECUTION:")
     print(f"   Command: {command}")
     print()
     # In production: subprocess.run(command, shell=True, capture_output=True)
@@ -71,16 +70,16 @@ def execute_shell(command: str) -> str:
 
 def execute_python(code: str) -> str:
     """Execute Python code (HIGH RISK)."""
-    print(f"\n🚨 PYTHON EXECUTION:")
+    print("\n🚨 PYTHON EXECUTION:")
     print(f"   Code: {code[:50]}...")
     print()
     # In production: exec(code)
-    return f"Simulated execution of Python code"
+    return "Simulated execution of Python code"
 
 
 def write_file(path: str, content: str) -> str:
     """Write file to filesystem (HIGH RISK)."""
-    print(f"\n🚨 FILE WRITE:")
+    print("\n🚨 FILE WRITE:")
     print(f"   Path: {path}")
     print(f"   Size: {len(content)} bytes")
     print()
@@ -89,7 +88,7 @@ def write_file(path: str, content: str) -> str:
 
 def read_file(path: str) -> str:
     """Read file from filesystem (LOW RISK)."""
-    print(f"\n📄 FILE READ:")
+    print("\n📄 FILE READ:")
     print(f"   Path: {path}")
     print()
     return f"Contents of {path}: [simulated file data]"
@@ -97,7 +96,7 @@ def read_file(path: str) -> str:
 
 def browse_website(url: str) -> str:
     """Browse website (LOW RISK)."""
-    print(f"\n🌐 WEB BROWSE:")
+    print("\n🌐 WEB BROWSE:")
     print(f"   URL: {url}")
     print()
     return f"Content from {url}: [simulated web data]"
@@ -105,7 +104,7 @@ def browse_website(url: str) -> str:
 
 def send_email(to: str, subject: str, body: str) -> str:
     """Send email (MEDIUM-HIGH RISK)."""
-    print(f"\n📧 EMAIL SEND:")
+    print("\n📧 EMAIL SEND:")
     print(f"   To: {to}")
     print(f"   Subject: {subject}")
     print()
@@ -114,7 +113,7 @@ def send_email(to: str, subject: str, body: str) -> str:
 
 def make_api_call(endpoint: str, method: str = "GET", data: str = "") -> str:
     """Make API call (MEDIUM RISK)."""
-    print(f"\n🔌 API CALL:")
+    print("\n🔌 API CALL:")
     print(f"   Endpoint: {endpoint}")
     print(f"   Method: {method}")
     print()
@@ -123,7 +122,7 @@ def make_api_call(endpoint: str, method: str = "GET", data: str = "") -> str:
 
 def delete_file(path: str) -> str:
     """Delete file (HIGH RISK)."""
-    print(f"\n🚨 FILE DELETE:")
+    print("\n🚨 FILE DELETE:")
     print(f"   Path: {path}")
     print()
     return f"File deleted: {path}"
@@ -219,7 +218,7 @@ def main():
         risk_score=1.0,
     )
 
-    governed_python = adapter.wrap_command(
+    adapter.wrap_command(
         "execute_python",
         execute_python,
         "Execute Python code",
@@ -233,7 +232,7 @@ def main():
         risk_score=0.8,
     )
 
-    governed_delete = adapter.wrap_command(
+    adapter.wrap_command(
         "delete_file",
         delete_file,
         "Delete file",
@@ -241,14 +240,14 @@ def main():
     )
 
     # Medium risk commands
-    governed_email = adapter.wrap_command(
+    adapter.wrap_command(
         "send_email",
         send_email,
         "Send email",
         risk_score=0.7,
     )
 
-    governed_api = adapter.wrap_command(
+    adapter.wrap_command(
         "make_api_call",
         make_api_call,
         "Make API call",
@@ -291,13 +290,13 @@ def main():
     # These should succeed because they're low risk
     print("Agent browses web for research...")
     result = governed_browse(url="https://example.com/ai-governance")
-    print(f"✓ ALLOWED (risk: 0.3)")
+    print("✓ ALLOWED (risk: 0.3)")
     print(f"  Result: {result[:50]}...")
     print()
 
     print("Agent reads existing research file...")
     result = governed_read(path="/data/research/notes.txt")
-    print(f"✓ ALLOWED (risk: 0.2)")
+    print("✓ ALLOWED (risk: 0.2)")
     print(f"  Result: {result[:50]}...")
     print()
 
@@ -314,7 +313,7 @@ def main():
         result = governed_shell(command="rm -rf /tmp/cache")
         print(f"✗ ERROR: Should have been denied! Result: {result}")
     except PermissionError as e:
-        print(f"✓ CORRECTLY DENIED by KERNELS")
+        print("✓ CORRECTLY DENIED by KERNELS")
         print(f"  Error: {e}")
         print()
         print("Kill-switch prevents unauthorized shell execution!")
@@ -344,9 +343,9 @@ def main():
         .build(keyring, "autogpt-operator-2026")
     )
 
-    print(f"✓ Permit issued for file write:")
+    print("✓ Permit issued for file write:")
     print(f"  Permit ID: {write_permit.permit_id[:16]}...")
-    print(f"  Path: /var/www/blog/ai-governance-article.md")
+    print("  Path: /var/www/blog/ai-governance-article.md")
     print()
 
     result = governed_write(
@@ -355,7 +354,7 @@ def main():
         permit_token=write_permit,
     )
 
-    print(f"✓ ALLOWED by KERNELS")
+    print("✓ ALLOWED by KERNELS")
     print(f"  Result: {result}")
     print()
 
@@ -395,7 +394,7 @@ def main():
         print("Executing command 99...")
         try:
             result = governed_browse(url="https://example.com/final-research")
-            print(f"✓ Command 99 executed successfully")
+            print("✓ Command 99 executed successfully")
             print()
         except RuntimeError as e:
             print(f"✗ Unexpected error: {e}")
@@ -404,7 +403,7 @@ def main():
         print("Executing command 100...")
         try:
             result = governed_read(path="/data/final-notes.txt")
-            print(f"✓ Command 100 executed successfully")
+            print("✓ Command 100 executed successfully")
             print()
         except RuntimeError as e:
             print(f"✗ Unexpected error: {e}")
@@ -414,9 +413,9 @@ def main():
         print("Attempting command 101 (should trigger kill-switch)...")
         try:
             result = governed_browse(url="https://example.com/post-limit")
-            print(f"✗ ERROR: Kill-switch should have activated!")
+            print("✗ ERROR: Kill-switch should have activated!")
         except RuntimeError as e:
-            print(f"✓ KILL-SWITCH ACTIVATED")
+            print("✓ KILL-SWITCH ACTIVATED")
             print(f"  Reason: {e}")
             print()
             print("Autonomous loop halted after reaching iteration limit!")
@@ -432,7 +431,7 @@ def main():
 
     evidence = adapter.export_evidence()
 
-    print(f"✓ Audit trail exported:")
+    print("✓ Audit trail exported:")
     print(f"  Kernel: {evidence['kernel_id']}")
     print(f"  Total entries: {evidence['entry_count']}")
     print(f"  Root hash: {evidence['root_hash'][:16]}...")
@@ -506,7 +505,7 @@ def main():
         json.dump(evidence, f, indent=2)
 
     print()
-    print(f"Full audit trail saved to: /tmp/autogpt_autonomous_audit.json")
+    print("Full audit trail saved to: /tmp/autogpt_autonomous_audit.json")
     print()
 
 

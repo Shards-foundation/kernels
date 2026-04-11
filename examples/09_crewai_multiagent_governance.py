@@ -41,7 +41,6 @@ Usage:
     python examples/09_crewai_multiagent_governance.py
 """
 
-from typing import Dict, Any
 import json
 import os
 
@@ -58,7 +57,7 @@ from kernels.permits import PermitBuilder
 
 def web_search(query: str) -> str:
     """Search the web (LOW RISK - read-only)."""
-    print(f"\n🔍 WEB SEARCH:")
+    print("\n🔍 WEB SEARCH:")
     print(f"   Query: {query}")
     print()
     return f"Search results for: {query}\n- Result 1\n- Result 2\n- Result 3"
@@ -66,7 +65,7 @@ def web_search(query: str) -> str:
 
 def read_file(path: str) -> str:
     """Read file from filesystem (LOW RISK - read-only)."""
-    print(f"\n📄 FILE READ:")
+    print("\n📄 FILE READ:")
     print(f"   Path: {path}")
     print()
     return f"Contents of {path}: [simulated file data]"
@@ -74,7 +73,7 @@ def read_file(path: str) -> str:
 
 def analyze_data(data: str, analysis_type: str) -> str:
     """Analyze data (MEDIUM RISK - computation only)."""
-    print(f"\n📊 DATA ANALYSIS:")
+    print("\n📊 DATA ANALYSIS:")
     print(f"   Type: {analysis_type}")
     print(f"   Data length: {len(data)} chars")
     print()
@@ -83,7 +82,7 @@ def analyze_data(data: str, analysis_type: str) -> str:
 
 def create_report(title: str, content: str) -> str:
     """Create report (MEDIUM RISK - internal only)."""
-    print(f"\n📝 REPORT CREATION:")
+    print("\n📝 REPORT CREATION:")
     print(f"   Title: {title}")
     print(f"   Length: {len(content)} chars")
     print()
@@ -92,7 +91,7 @@ def create_report(title: str, content: str) -> str:
 
 def write_file(path: str, content: str) -> str:
     """Write file to filesystem (HIGH RISK - persistent state change)."""
-    print(f"\n🚨 FILE WRITE:")
+    print("\n🚨 FILE WRITE:")
     print(f"   Path: {path}")
     print(f"   Size: {len(content)} bytes")
     print()
@@ -101,7 +100,7 @@ def write_file(path: str, content: str) -> str:
 
 def send_email(to: str, subject: str, body: str) -> str:
     """Send email (HIGH RISK - external communication)."""
-    print(f"\n🚨 EMAIL SEND:")
+    print("\n🚨 EMAIL SEND:")
     print(f"   To: {to}")
     print(f"   Subject: {subject}")
     print()
@@ -110,7 +109,7 @@ def send_email(to: str, subject: str, body: str) -> str:
 
 def publish_blog(title: str, content: str, publish: bool = False) -> str:
     """Publish blog post (CRITICAL RISK - public visibility)."""
-    print(f"\n🚨 BLOG PUBLISH:")
+    print("\n🚨 BLOG PUBLISH:")
     print(f"   Title: {title}")
     print(f"   Publish: {publish}")
     print()
@@ -185,7 +184,7 @@ def main():
     analyst_id = adapter.create_agent_identity("Analyst")
     publisher_id = adapter.create_agent_identity("Publisher")
 
-    print(f"✓ Agent identities created:")
+    print("✓ Agent identities created:")
     print(f"  - Researcher: {researcher_id}")
     print(f"  - Analyst: {analyst_id}")
     print(f"  - Publisher: {publisher_id}")
@@ -277,9 +276,9 @@ def main():
     )
 
     print("✓ Tools wrapped with governance:")
-    print(f"  Researcher: web_search [NO PERMIT], read_file [NO PERMIT]")
-    print(f"  Analyst: analyze_data [NO PERMIT], create_report [NO PERMIT]")
-    print(f"  Publisher: write_file [PERMIT REQUIRED], send_email [PERMIT REQUIRED], publish_blog [PERMIT REQUIRED]")
+    print("  Researcher: web_search [NO PERMIT], read_file [NO PERMIT]")
+    print("  Analyst: analyze_data [NO PERMIT], create_report [NO PERMIT]")
+    print("  Publisher: write_file [PERMIT REQUIRED], send_email [PERMIT REQUIRED], publish_blog [PERMIT REQUIRED]")
     print()
 
     # ========================================================================
@@ -292,14 +291,14 @@ def main():
     # Researcher searches web
     print("Researcher searches web...")
     result = researcher_search._run(query="AI governance best practices")
-    print(f"✓ ALLOWED (no permit needed)")
+    print("✓ ALLOWED (no permit needed)")
     print(f"  Result: {result[:50]}...")
     print()
 
     # Researcher reads file
     print("Researcher reads file...")
     result = researcher_read._run(path="/data/research/papers.txt")
-    print(f"✓ ALLOWED (no permit needed)")
+    print("✓ ALLOWED (no permit needed)")
     print(f"  Result: {result[:50]}...")
     print()
 
@@ -309,7 +308,7 @@ def main():
         data="[research data from web search]",
         analysis_type="sentiment analysis"
     )
-    print(f"✓ ALLOWED (no permit needed)")
+    print("✓ ALLOWED (no permit needed)")
     print(f"  Result: {result}")
     print()
 
@@ -319,7 +318,7 @@ def main():
         title="AI Governance Analysis",
         content="[analysis results]"
     )
-    print(f"✓ ALLOWED (no permit needed)")
+    print("✓ ALLOWED (no permit needed)")
     print(f"  Result: {result}")
     print()
 
@@ -339,7 +338,7 @@ def main():
         )
         print(f"✗ ERROR: Should have been denied! Result: {result}")
     except PermissionError as e:
-        print(f"✓ CORRECTLY DENIED by KERNELS")
+        print("✓ CORRECTLY DENIED by KERNELS")
         print(f"  Error: {e}")
         print()
         print("This prevents unauthorized file system modifications!")
@@ -369,7 +368,7 @@ def main():
         .build(keyring, "crew-operator-2026")
     )
 
-    print(f"✓ Permit issued:")
+    print("✓ Permit issued:")
     print(f"  Permit ID: {write_permit.permit_id[:16]}...")
     print(f"  Action: {write_permit.action}")
     print(f"  Subject: {write_permit.subject}")
@@ -381,7 +380,7 @@ def main():
         permit_token=write_permit,
     )
 
-    print(f"✓ ALLOWED by KERNELS")
+    print("✓ ALLOWED by KERNELS")
     print(f"  Result: {result}")
     print()
 
@@ -402,9 +401,9 @@ def main():
     )
 
     if can_delegate:
-        print(f"✗ ERROR: Delegation should be blocked!")
+        print("✗ ERROR: Delegation should be blocked!")
     else:
-        print(f"✓ DELEGATION BLOCKED")
+        print("✓ DELEGATION BLOCKED")
         print(f"  {researcher_id} cannot delegate to {publisher_id}")
         print(f"  Allowed targets: {delegation_matrix[researcher_id]}")
         print()
@@ -421,12 +420,12 @@ def main():
     )
 
     if can_delegate:
-        print(f"✓ DELEGATION ALLOWED")
+        print("✓ DELEGATION ALLOWED")
         print(f"  {researcher_id} can delegate to {analyst_id}")
-        print(f"  Valid delegation chain maintained")
+        print("  Valid delegation chain maintained")
         print()
     else:
-        print(f"✗ ERROR: This delegation should be allowed!")
+        print("✗ ERROR: This delegation should be allowed!")
         print()
 
     # ========================================================================
@@ -473,8 +472,8 @@ def main():
     )
 
     print("✓ Two permits issued:")
-    print(f"  1. send_email → subscribers@company.com")
-    print(f"  2. publish_blog → 'AI Governance Best Practices'")
+    print("  1. send_email → subscribers@company.com")
+    print("  2. publish_blog → 'AI Governance Best Practices'")
     print()
 
     # Execute with permits
@@ -508,7 +507,7 @@ def main():
 
     evidence = adapter.export_evidence()
 
-    print(f"✓ Audit trail exported:")
+    print("✓ Audit trail exported:")
     print(f"  Kernel: {evidence['kernel_id']}")
     print(f"  Total entries: {evidence['entry_count']}")
     print(f"  Root hash: {evidence['root_hash'][:16]}...")
@@ -579,7 +578,7 @@ def main():
         json.dump(evidence, f, indent=2)
 
     print()
-    print(f"Full audit trail saved to: /tmp/crewai_multiagent_audit.json")
+    print("Full audit trail saved to: /tmp/crewai_multiagent_audit.json")
     print()
 
 

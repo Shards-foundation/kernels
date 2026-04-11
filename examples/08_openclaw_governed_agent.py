@@ -39,7 +39,6 @@ Usage:
     agent.run("Delete all my emails from last month")  # DENIED: MISSING_PERMIT
 """
 
-from typing import Dict, Any
 import json
 import os
 
@@ -65,7 +64,7 @@ def shell_execute(command: str) -> str:
     Without governance: "rm -rf /" could be executed by mistake.
     With KERNELS: Requires cryptographically signed permit.
     """
-    print(f"\n🚨 SHELL EXECUTION:")
+    print("\n🚨 SHELL EXECUTION:")
     print(f"   Command: {command}")
     print()
 
@@ -83,7 +82,7 @@ def email_delete(mailbox: str, filter_query: str) -> str:
     Without governance: Agent could delete important emails.
     With KERNELS: Requires permit with exact filter parameters.
     """
-    print(f"\n🚨 EMAIL DELETION:")
+    print("\n🚨 EMAIL DELETION:")
     print(f"   Mailbox: {mailbox}")
     print(f"   Filter: {filter_query}")
     print()
@@ -100,7 +99,7 @@ def calendar_create_event(title: str, start_time: str, attendees: str) -> str:
     Without governance: Agent could schedule meetings without confirmation.
     With KERNELS: Requires permit for each event creation.
     """
-    print(f"\n📅 CALENDAR EVENT:")
+    print("\n📅 CALENDAR EVENT:")
     print(f"   Title: {title}")
     print(f"   Start: {start_time}")
     print(f"   Attendees: {attendees}")
@@ -119,7 +118,7 @@ def web_browse(url: str, action: str = "read") -> str:
     With KERNELS: Write actions require permits.
     """
     if action in ["submit", "click", "purchase"]:
-        print(f"\n🚨 WEB ACTION:")
+        print("\n🚨 WEB ACTION:")
         print(f"   URL: {url}")
         print(f"   Action: {action}")
         print()
@@ -137,7 +136,7 @@ def slack_send_message(channel: str, message: str, mention_all: bool = False) ->
     With KERNELS: Mentions require permits.
     """
     if mention_all:
-        print(f"\n🚨 SLACK @CHANNEL:")
+        print("\n🚨 SLACK @CHANNEL:")
         print(f"   Channel: {channel}")
         print(f"   Message: {message}")
         print()
@@ -227,7 +226,7 @@ def main():
         raise_on_deny=True,
     )
 
-    governed_slack = adapter.create_wrapper(
+    adapter.create_wrapper(
         name="slack_send_message",
         func=slack_send_message,
         description="Send Slack message",
@@ -255,7 +254,7 @@ def main():
         result = governed_shell(command="rm -rf /tmp/cache")
         print(f"✗ ERROR: Should have been denied! Result: {result}")
     except Exception as e:
-        print(f"✓ CORRECTLY DENIED by kernel")
+        print("✓ CORRECTLY DENIED by kernel")
         print(f"  Error: {e}")
         print()
         print("This prevents the '60k GitHub stars' honeypot attack!")
@@ -278,7 +277,7 @@ def main():
         )
         print(f"✗ ERROR: Should have been denied! Result: {result}")
     except Exception as e:
-        print(f"✓ CORRECTLY DENIED by kernel")
+        print("✓ CORRECTLY DENIED by kernel")
         print(f"  Error: {e}")
         print()
         print("Prevents accidental data loss from AI misinterpretation!")
@@ -326,7 +325,7 @@ def main():
         permit_token=calendar_permit,
     )
 
-    print(f"✓ ALLOWED by kernel")
+    print("✓ ALLOWED by kernel")
     print(f"  Result: {result}")
     print()
 
@@ -367,7 +366,7 @@ def main():
         permit_token=web_permit,
     )
 
-    print(f"✓ ALLOWED by kernel")
+    print("✓ ALLOWED by kernel")
     print(f"  Result: {result}")
     print()
 
@@ -380,7 +379,7 @@ def main():
 
     evidence = adapter.export_evidence()
 
-    print(f"✓ Audit trail exported:")
+    print("✓ Audit trail exported:")
     print(f"  Kernel: {evidence['kernel_id']}")
     print(f"  Total entries: {evidence['entry_count']}")
     print(f"  Root hash: {evidence['root_hash'][:16]}...")
@@ -439,7 +438,7 @@ def main():
         json.dump(evidence, f, indent=2)
 
     print()
-    print(f"Full audit trail saved to: /tmp/openclaw_audit.json")
+    print("Full audit trail saved to: /tmp/openclaw_audit.json")
     print()
 
 

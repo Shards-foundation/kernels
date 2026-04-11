@@ -9,11 +9,11 @@ from __future__ import annotations
 import json
 import urllib.request
 import urllib.error
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 import asyncio
 
-from kernels.common.types import Request, Receipt, ToolCall, Decision
+from kernels.common.types import Request, Receipt, Decision
 from kernels.common.errors import KernelError
 
 

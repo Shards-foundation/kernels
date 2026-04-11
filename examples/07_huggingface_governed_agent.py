@@ -19,7 +19,6 @@ Without KERNELS: Agent could execute arbitrary code without authorization.
 With KERNELS: Code execution requires cryptographically signed permit.
 """
 
-from typing import Dict, Any
 import json
 
 # KERNELS imports
@@ -27,7 +26,6 @@ from kernels.common.types import KernelConfig, VirtualClock
 from kernels.variants.strict_kernel import StrictKernel
 from kernels.integrations.huggingface_adapter import (
     HuggingFaceAdapter,
-    PermitInjector,
 )
 from kernels.permits import PermitBuilder
 
@@ -53,7 +51,7 @@ def execute_python_code(code: str) -> str:
     In production, this would use exec() or subprocess.
     This is exactly the kind of tool that needs governance.
     """
-    print(f"\n🚨 EXECUTING CODE:")
+    print("\n🚨 EXECUTING CODE:")
     print(f"   {code}")
     print()
     return f"Code executed: {code}"
@@ -65,7 +63,7 @@ def access_filesystem(path: str, operation: str) -> str:
 
     Could read sensitive files, modify system files, etc.
     """
-    print(f"\n🚨 FILESYSTEM ACCESS:")
+    print("\n🚨 FILESYSTEM ACCESS:")
     print(f"   Path: {path}")
     print(f"   Operation: {operation}")
     print()
@@ -123,7 +121,7 @@ def main():
     adapter = HuggingFaceAdapter(kernel, actor="research-agent-v1")
 
     # Wrap tools with proper HF schemas
-    search_tool = adapter.wrap_tool(
+    adapter.wrap_tool(
         name="web_search",
         func=web_search,
         description="Search the web for information",
@@ -131,7 +129,7 @@ def main():
         output_type="string",
     )
 
-    document_tool = adapter.wrap_tool(
+    adapter.wrap_tool(
         name="read_document",
         func=read_document,
         description="Read a document from path",
@@ -179,7 +177,7 @@ def main():
         result = code_tool(code="import os; os.system('rm -rf /')")
         print(f"✗ ERROR: Should have been denied! Result: {result}")
     except Exception as e:
-        print(f"✓ CORRECTLY DENIED by kernel")
+        print("✓ CORRECTLY DENIED by kernel")
         print(f"  Error: {e}")
         print()
         print("This prevents unauthorized code execution!")
@@ -222,7 +220,7 @@ def main():
         permit_token=code_permit,
     )
 
-    print(f"✓ ALLOWED by kernel")
+    print("✓ ALLOWED by kernel")
     print(f"  Result: {result}")
     print()
 
@@ -262,7 +260,7 @@ def main():
         permit_token=fs_permit,
     )
 
-    print(f"✓ ALLOWED by kernel")
+    print("✓ ALLOWED by kernel")
     print(f"  Result: {result}")
     print()
 
@@ -275,7 +273,7 @@ def main():
 
     evidence = adapter.export_evidence()
 
-    print(f"✓ Audit trail exported:")
+    print("✓ Audit trail exported:")
     print(f"  Kernel: {evidence['kernel_id']}")
     print(f"  Total entries: {evidence['entry_count']}")
     print(f"  Root hash: {evidence['root_hash'][:16]}...")
@@ -320,7 +318,7 @@ def main():
         json.dump(evidence, f, indent=2)
 
     print()
-    print(f"Full audit trail saved to: /tmp/hf_agent_audit.json")
+    print("Full audit trail saved to: /tmp/hf_agent_audit.json")
     print()
 
 

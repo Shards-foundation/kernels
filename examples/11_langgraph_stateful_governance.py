@@ -45,7 +45,7 @@ Usage:
     python examples/11_langgraph_stateful_governance.py
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any
 import json
 import os
 
@@ -62,7 +62,7 @@ from kernels.permits import PermitBuilder
 
 def validate_order(state: Dict[str, Any]) -> Dict[str, Any]:
     """Validate order details (LOW RISK - no permits needed)."""
-    print(f"\n📋 VALIDATING ORDER:")
+    print("\n📋 VALIDATING ORDER:")
     print(f"   Order ID: {state.get('order_id')}")
     print(f"   Total: ${state.get('total_price', 0)}")
     print()
@@ -90,7 +90,7 @@ def validate_order(state: Dict[str, Any]) -> Dict[str, Any]:
 
 def process_payment(state: Dict[str, Any]) -> Dict[str, Any]:
     """Process payment (HIGH RISK - requires permit)."""
-    print(f"\n💳 PROCESSING PAYMENT:")
+    print("\n💳 PROCESSING PAYMENT:")
     print(f"   Amount: ${state.get('total_price', 0)}")
     print(f"   Payment method: {state.get('payment_method', 'unknown')}")
     print()
@@ -104,7 +104,7 @@ def process_payment(state: Dict[str, Any]) -> Dict[str, Any]:
 
 def update_inventory(state: Dict[str, Any]) -> Dict[str, Any]:
     """Update inventory (HIGH RISK - requires permit)."""
-    print(f"\n📦 UPDATING INVENTORY:")
+    print("\n📦 UPDATING INVENTORY:")
 
     items = state.get('items', [])
     inventory = state.get('inventory', {})
@@ -125,7 +125,7 @@ def update_inventory(state: Dict[str, Any]) -> Dict[str, Any]:
 
 def send_confirmation(state: Dict[str, Any]) -> Dict[str, Any]:
     """Send order confirmation email (MEDIUM RISK - requires permit)."""
-    print(f"\n📧 SENDING CONFIRMATION:")
+    print("\n📧 SENDING CONFIRMATION:")
     print(f"   To: {state.get('customer_email', 'unknown')}")
     print(f"   Order ID: {state.get('order_id')}")
     print()
@@ -137,7 +137,7 @@ def send_confirmation(state: Dict[str, Any]) -> Dict[str, Any]:
 
 def ship_order(state: Dict[str, Any]) -> Dict[str, Any]:
     """Ship order (HIGH RISK - requires permit)."""
-    print(f"\n🚚 SHIPPING ORDER:")
+    print("\n🚚 SHIPPING ORDER:")
     print(f"   Order ID: {state.get('order_id')}")
     print(f"   Address: {state.get('shipping_address', 'unknown')}")
     print()
@@ -352,9 +352,9 @@ def main():
 
     try:
         workflow_state = governed_payment(workflow_state)
-        print(f"✗ ERROR: Should have been denied!")
+        print("✗ ERROR: Should have been denied!")
     except PermissionError as e:
-        print(f"✓ CORRECTLY DENIED by KERNELS")
+        print("✓ CORRECTLY DENIED by KERNELS")
         print(f"  Error: {e}")
         print()
         print("Payment processing requires cryptographic permit!")
@@ -421,10 +421,10 @@ def main():
     )
 
     print("✓ Permits issued for workflow steps:")
-    print(f"  - process_payment")
-    print(f"  - update_inventory")
-    print(f"  - send_confirmation")
-    print(f"  - ship_order")
+    print("  - process_payment")
+    print("  - update_inventory")
+    print("  - send_confirmation")
+    print("  - ship_order")
     print()
 
     # Execute workflow with permits
@@ -467,10 +467,10 @@ def main():
     print()
 
     try:
-        violations = adapter.check_invariants(invalid_state)
-        print(f"✗ ERROR: Invariant check should have failed!")
+        adapter.check_invariants(invalid_state)
+        print("✗ ERROR: Invariant check should have failed!")
     except RuntimeError as e:
-        print(f"✓ INVARIANT VIOLATION DETECTED")
+        print("✓ INVARIANT VIOLATION DETECTED")
         print(f"  Error: {e}")
         print()
         print("Workflow halted due to invariant violation!")
@@ -504,7 +504,7 @@ def main():
 
     evidence = adapter.export_evidence()
 
-    print(f"✓ Audit trail exported:")
+    print("✓ Audit trail exported:")
     print(f"  Kernel: {evidence['kernel_id']}")
     print(f"  Total entries: {evidence['entry_count']}")
     print(f"  Root hash: {evidence['root_hash'][:16]}...")
@@ -577,7 +577,7 @@ def main():
         json.dump(evidence, f, indent=2)
 
     print()
-    print(f"Full audit trail saved to: /tmp/langgraph_workflow_audit.json")
+    print("Full audit trail saved to: /tmp/langgraph_workflow_audit.json")
     print()
 
 

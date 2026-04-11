@@ -155,7 +155,7 @@ def create_flask_app(
 
 def run_flask_server(
     kernel_id: str = "flask-kernel",
-    host: str = "0.0.0.0",
+    host: str = "127.0.0.1",
     port: int = 8080,
     policy: Optional[JurisdictionPolicy] = None,
     debug: bool = False,

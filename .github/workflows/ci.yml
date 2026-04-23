@@ -43,11 +43,11 @@ jobs:
         run: bandit -r kernels implementations -q
 
       - name: Run tests with coverage
-        run: pytest --cov=kernels --cov=implementations --cov-report=term-missing --cov-report=xml --cov-fail-under=80
+        run: pytest --cov=kernels --cov=implementations --cov-branch --cov-report=term-missing --cov-report=xml --cov-fail-under=80
 
       - name: Upload coverage report to Codecov
         if: matrix.python-version == '3.11'
-        uses: codecov/codecov-action@v6
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           slug: Shards-foundation/kernels

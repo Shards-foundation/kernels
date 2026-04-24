@@ -5,7 +5,7 @@ provides common functionality that variants can extend.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 from kernels.common.types import (
     Decision,
@@ -29,6 +29,12 @@ from kernels.jurisdiction.rules import evaluate_policy
 from kernels.state.machine import StateMachine
 from kernels.execution.tools import create_default_registry
 from kernels.execution.dispatcher import Dispatcher
+from kernels.core.runtime import (
+    ExecutionContext,
+    KernelRuntime,
+    RuntimeEvent,
+    RuntimeExecutionResult,
+)
 from kernels.permits import (
     NonceRegistry,
     PermitToken,
@@ -71,7 +77,8 @@ class Kernel(ABC):
 
         Args:
             request: Request to process.
-            permit_token: Permit token authorizing this request (required for execution in most variants).
+            permit_token: Permit token authorizing this request
+                (required for execution in most variants).
 
         Returns:
             Receipt with processing result.
@@ -122,6 +129,7 @@ class BaseKernel(Kernel):
         self._ledger: Optional[AuditLedger] = None
         self._policy: Optional[JurisdictionPolicy] = None
         self._dispatcher: Optional[Dispatcher] = None
+        self._runtime: Optional[KernelRuntime] = None
         self._pending_request: Optional[KernelRequest] = None
         self._pending_decision: Optional[Decision] = None
         self._pending_result: Optional[Any] = None
@@ -220,6 +228,10 @@ class BaseKernel(Kernel):
         self._ledger = AuditLedger(config.kernel_id, config.variant)
         self._policy = self._policy or JurisdictionPolicy.default()
         self._dispatcher = Dispatcher(create_default_registry())
+        self._runtime = KernelRuntime(
+            self._dispatcher,
+            now_ms=self._config.clock.now_ms,
+        )
 
         # Transition to IDLE
         self._state_machine.transition(KernelState.IDLE)
@@ -236,7 +248,7 @@ class BaseKernel(Kernel):
         """Submit a request for processing."""
         if self._state_machine is None:
             raise StateError("Kernel not booted")
-        if self._dispatcher is None or self._ledger is None:
+        if self._dispatcher is None or self._ledger is None or self._runtime is None:
             raise StateError("Kernel not booted")
 
         self._state_machine.assert_not_halted()
@@ -384,20 +396,43 @@ class BaseKernel(Kernel):
                     return self._fail_request(
                         request,
                         state_from,
-                        f"TOCTOU detected: tool_name mismatch (envelope: {decision_envelope.tool_name}, request: {request.tool_call.name})",
+                        (
+                            "TOCTOU detected: tool_name mismatch "
+                            f"(envelope: {decision_envelope.tool_name}, "
+                            f"request: {request.tool_call.name})"
+                        ),
                     )
                 # Params may have been normalized, so we don't do strict equality check
-                # The envelope proves what was verified; the params hash in audit proves what was executed
+                # The envelope proves what was verified.
+                # The params hash in audit proves what was executed.
 
             self._state_machine.transition(KernelState.EXECUTING)
-            exec_result = self._dispatcher.execute(request.tool_call)
-            if not exec_result.success:
+            context = ExecutionContext(
+                trace_id=request.request_id,
+                actor=request.actor,
+                state_ref=self._state_machine.state.value,
+                policy_ref="jurisdiction:active",
+                policy_snapshot=(
+                    f"actors={sorted(self.policy.allowed_actors)};"
+                    f"tools={sorted(self.policy.allowed_tools)}"
+                ),
+                idempotency_key=request.request_id,
+                max_time_ms=(
+                    decision_envelope.max_time_ms
+                    if decision_envelope is not None
+                    else None
+                ),
+                max_calls=1,
+                call_index=1,
+            )
+            runtime_result = self._runtime.execute(request.tool_call, context)
+            if not runtime_result.dispatcher_result.success:
                 return self._fail_request(
                     request,
                     state_from,
-                    f"Tool execution failed: {exec_result.error}",
+                    f"Tool execution failed: {runtime_result.dispatcher_result.error}",
                 )
-            tool_result = exec_result.result
+            tool_result = runtime_result.dispatcher_result.result
 
         # Audit
         self._state_machine.transition(KernelState.AUDITING)
@@ -650,4 +685,28 @@ class BaseKernel(Kernel):
             decision=Decision.DENY,
             error=error,
             evidence_hash=entry.entry_hash,
+        )
+
+    def set_runtime_hooks(
+        self,
+        *,
+        before_execute: Optional[
+            Callable[[ExecutionContext, ToolCall], Optional[str]]
+        ] = None,
+        after_execute: Optional[
+            Callable[[ExecutionContext, ToolCall, RuntimeExecutionResult], None]
+        ] = None,
+        on_error: Optional[
+            Callable[[ExecutionContext, ToolCall, RuntimeExecutionResult], None]
+        ] = None,
+        event_sink: Optional[Callable[[RuntimeEvent], None]] = None,
+    ) -> None:
+        """Configure runtime hooks for execution mediation observability."""
+        if self._runtime is None:
+            raise StateError("Kernel not booted")
+        self._runtime.set_hooks(
+            before_execute=before_execute,
+            after_execute=after_execute,
+            on_error=on_error,
+            event_sink=event_sink,
         )

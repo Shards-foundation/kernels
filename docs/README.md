@@ -7,6 +7,7 @@ Documentation for understanding and integrating KERNELS.
 | Document | Purpose |
 |----------|---------|
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Component boundaries and data flows |
+| [architecture/KERNEL_STRATA.md](architecture/KERNEL_STRATA.md) | Taxonomy for memory/runtime/governance/multi-agent kernel layers |
 | [THREAT_MODEL.md](THREAT_MODEL.md) | Adversary model + mitigations |
 | [pipelines/HPC_CICD_ARCHITECTURE.md](pipelines/HPC_CICD_ARCHITECTURE.md) | Advanced CI/CD design for deterministic kernel infrastructure |
 | [FAQ.md](FAQ.md) | Usage clarifications and non-goals |

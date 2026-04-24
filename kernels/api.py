@@ -42,6 +42,20 @@ from kernels.variants.dual_channel_kernel import DualChannelKernel
 # Tooling surface (stable)
 # -----------------------------------------------------------------------------
 from kernels.execution.tools import ToolRegistry
+from kernels.core.runtime import (
+    Artifact,
+    ArtifactRef,
+    ExecutionIdentity,
+    ExecutionContext,
+    GraphBudget,
+    GraphExecutionResult,
+    KernelRuntime,
+    RuntimeEvent,
+    RuntimeExecutionResult,
+    RuntimeState,
+    TaskGraph,
+    TaskNode,
+)
 
 # -----------------------------------------------------------------------------
 # Evidence surface (stable)
@@ -97,6 +111,18 @@ __all__ = [
     "DualChannelKernel",
     # Tooling
     "ToolRegistry",
+    "ExecutionContext",
+    "ExecutionIdentity",
+    "GraphBudget",
+    "ArtifactRef",
+    "Artifact",
+    "TaskNode",
+    "TaskGraph",
+    "GraphExecutionResult",
+    "RuntimeState",
+    "KernelRuntime",
+    "RuntimeEvent",
+    "RuntimeExecutionResult",
     # Evidence
     "AuditLedger",
     "replay_and_verify",

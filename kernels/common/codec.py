@@ -105,9 +105,7 @@ def serialize_for_audit(
         "error": error,
         "permit_digest": permit_digest,
         "permit_verification": permit_verification,
-        "permit_denial_reasons": list(permit_denial_reasons)
-        if permit_denial_reasons
-        else None,
+        "permit_denial_reasons": list(permit_denial_reasons) if permit_denial_reasons else None,
         "proposal_hash": proposal_hash,
         "permit_nonce": permit_nonce,
         "permit_issuer": permit_issuer,
@@ -134,15 +132,11 @@ def audit_entry_to_dict(entry: Any) -> dict[str, Any]:
         "request_id": entry.request_id,
         "actor": entry.actor,
         "intent": entry.intent,
-        "decision": entry.decision.value
-        if hasattr(entry.decision, "value")
-        else entry.decision,
+        "decision": entry.decision.value if hasattr(entry.decision, "value") else entry.decision,
         "state_from": entry.state_from.value
         if hasattr(entry.state_from, "value")
         else entry.state_from,
-        "state_to": entry.state_to.value
-        if hasattr(entry.state_to, "value")
-        else entry.state_to,
+        "state_to": entry.state_to.value if hasattr(entry.state_to, "value") else entry.state_to,
         "tool_name": entry.tool_name,
         "params_hash": entry.params_hash,
         "evidence_hash": entry.evidence_hash,

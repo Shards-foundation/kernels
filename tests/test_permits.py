@@ -13,6 +13,7 @@ Tests cover:
 
 import unittest
 
+from kernels.common.types import Decision
 from kernels.permits import (
     NonceRegistry,
     PermitBuilder,
@@ -25,7 +26,6 @@ from kernels.permits import (
     verify_permit,
     verify_signature,
 )
-from kernels.common.types import Decision
 
 
 class TestCanonicalSerialization(unittest.TestCase):
@@ -69,9 +69,7 @@ class TestCanonicalSerialization(unittest.TestCase):
             key_id="key1",
         )
 
-        self.assertEqual(
-            canonical_permit_bytes(permit1), canonical_permit_bytes(permit2)
-        )
+        self.assertEqual(canonical_permit_bytes(permit1), canonical_permit_bytes(permit2))
 
     def test_canonical_bytes_excludes_signature(self) -> None:
         """Canonical bytes exclude signature by default."""
@@ -325,8 +323,7 @@ class TestHMACSigning(unittest.TestCase):
         self.assertEqual(result.status, Decision.DENY)
         # Either SIGNATURE_INVALID or PERMIT_ID_MISMATCH is acceptable (both indicate tampering)
         self.assertTrue(
-            "PERMIT_ID_MISMATCH" in result.reasons
-            or "SIGNATURE_INVALID" in result.reasons,
+            "PERMIT_ID_MISMATCH" in result.reasons or "SIGNATURE_INVALID" in result.reasons,
             f"Expected PERMIT_ID_MISMATCH or SIGNATURE_INVALID, got {result.reasons}",
         )
 
@@ -570,8 +567,7 @@ class TestPermitVerificationNegative(unittest.TestCase):
         self.assertEqual(result.status, Decision.DENY)
         # Either SIGNATURE_INVALID or PERMIT_ID_MISMATCH is acceptable (both indicate tampering)
         self.assertTrue(
-            "PERMIT_ID_MISMATCH" in result.reasons
-            or "SIGNATURE_INVALID" in result.reasons,
+            "PERMIT_ID_MISMATCH" in result.reasons or "SIGNATURE_INVALID" in result.reasons,
             f"Expected PERMIT_ID_MISMATCH or SIGNATURE_INVALID, got {result.reasons}",
         )
 
@@ -754,9 +750,7 @@ class TestPermitVerificationNegative(unittest.TestCase):
         )
 
         self.assertEqual(result.status, Decision.DENY)
-        self.assertTrue(
-            any("FORBIDDEN_PARAM_DETECTED" in reason for reason in result.reasons)
-        )
+        self.assertTrue(any("FORBIDDEN_PARAM_DETECTED" in reason for reason in result.reasons))
 
     # Test 13: Missing issuer
     def test_deny_missing_issuer(self) -> None:
@@ -1300,9 +1294,7 @@ class TestPermitVerificationPositive(unittest.TestCase):
         """Allow request with subset of permit params."""
         from dataclasses import replace
 
-        permit = replace(
-            self.valid_permit, params={"text": "hello", "extra": "allowed"}
-        )
+        permit = replace(self.valid_permit, params={"text": "hello", "extra": "allowed"})
         # Re-sign
         from kernels.permits import sign_permit
 

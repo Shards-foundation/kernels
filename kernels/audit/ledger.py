@@ -6,19 +6,19 @@ includes the hash of the previous entry, ensuring tamper detection.
 
 from typing import Any, Optional
 
-from kernels.common.types import (
-    AuditEntry,
-    Decision,
-    EvidenceBundle,
-    KernelState,
-)
+from kernels.common.codec import audit_entry_to_dict, serialize_for_audit
 from kernels.common.errors import AuditError
 from kernels.common.hashing import (
     compute_chain_hash,
     compute_hash_dict,
     genesis_hash,
 )
-from kernels.common.codec import serialize_for_audit, audit_entry_to_dict
+from kernels.common.types import (
+    AuditEntry,
+    Decision,
+    EvidenceBundle,
+    KernelState,
+)
 
 
 class AuditLedger:
@@ -120,9 +120,7 @@ class AuditLedger:
         try:
             # Compute hashes for params and evidence
             params_hash = compute_hash_dict(params) if params else None
-            evidence_hash = (
-                compute_hash_dict({"evidence": evidence}) if evidence else None
-            )
+            evidence_hash = compute_hash_dict({"evidence": evidence}) if evidence else None
 
             # Serialize entry data for hashing
             entry_data = serialize_for_audit(

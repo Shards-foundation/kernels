@@ -2,9 +2,9 @@
 
 import unittest
 
-from kernels.common.types import Decision, KernelState
-from kernels.common.hashing import genesis_hash
 from kernels.audit.ledger import AuditLedger
+from kernels.common.hashing import genesis_hash
+from kernels.common.types import Decision, KernelState
 
 
 class TestAuditLedger(unittest.TestCase):

@@ -2,8 +2,8 @@
 
 import unittest
 
-from kernels.common.types import KernelState
 from kernels.common.errors import StateError
+from kernels.common.types import KernelState
 from kernels.state.machine import StateMachine
 from kernels.state.transitions import (
     can_transition,

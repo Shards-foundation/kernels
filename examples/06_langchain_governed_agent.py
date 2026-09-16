@@ -19,14 +19,14 @@ Without KERNELS: The agent could send emails without authorization.
 With KERNELS: Every dangerous action requires a cryptographically signed permit.
 """
 
-from typing import Dict, Any
 import json
+from typing import Any, Dict
 
 # KERNELS imports
 from kernels.common.types import KernelConfig, VirtualClock
-from kernels.variants.strict_kernel import StrictKernel
 from kernels.integrations.langchain_adapter import LangChainAdapter
 from kernels.permits import PermitBuilder
+from kernels.variants.strict_kernel import StrictKernel
 
 # Simulate LangChain (these would normally be from langchain imports)
 # For demonstration, we implement minimal versions
@@ -35,9 +35,7 @@ from kernels.permits import PermitBuilder
 class SimulatedLLM:
     """Simulated LLM that decides which tools to call."""
 
-    def decide_action(
-        self, user_query: str, available_tools: list[str]
-    ) -> Dict[str, Any]:
+    def decide_action(self, user_query: str, available_tools: list[str]) -> Dict[str, Any]:
         """Simple rule-based decision (in real LangChain, this would be LLM-powered)."""
         if "email" in user_query.lower():
             return {

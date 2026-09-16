@@ -50,10 +50,9 @@ import os
 
 # KERNELS imports
 from kernels.common.types import KernelConfig, VirtualClock
-from kernels.variants.strict_kernel import StrictKernel
 from kernels.integrations.autogpt_adapter import AutoGPTAdapter
 from kernels.permits import PermitBuilder
-
+from kernels.variants.strict_kernel import StrictKernel
 
 # ============================================================================
 # Simulated AutoGPT Command Implementations

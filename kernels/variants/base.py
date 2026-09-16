@@ -7,6 +7,11 @@ provides common functionality that variants can extend.
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 
+from kernels.audit.ledger import AuditLedger
+from kernels.common.errors import (
+    BootError,
+    StateError,
+)
 from kernels.common.types import (
     Decision,
     DecisionEnvelope,
@@ -18,28 +23,23 @@ from kernels.common.types import (
     ReceiptStatus,
     ToolCall,
 )
-from kernels.common.errors import (
-    BootError,
-    StateError,
-)
-from kernels.common.validate import validate_request, check_ambiguity
-from kernels.audit.ledger import AuditLedger
-from kernels.jurisdiction.policy import JurisdictionPolicy
-from kernels.jurisdiction.rules import evaluate_policy
-from kernels.state.machine import StateMachine
-from kernels.execution.tools import create_default_registry
-from kernels.execution.dispatcher import Dispatcher
+from kernels.common.validate import check_ambiguity, validate_request
 from kernels.core.runtime import (
     ExecutionContext,
     KernelRuntime,
     RuntimeEvent,
     RuntimeExecutionResult,
 )
+from kernels.execution.dispatcher import Dispatcher
+from kernels.execution.tools import create_default_registry
+from kernels.jurisdiction.policy import JurisdictionPolicy
+from kernels.jurisdiction.rules import evaluate_policy
 from kernels.permits import (
     NonceRegistry,
     PermitToken,
     verify_permit,
 )
+from kernels.state.machine import StateMachine
 
 
 class Kernel(ABC):
@@ -328,9 +328,7 @@ class BaseKernel(Kernel):
             permit_nonce = permit_token.nonce  # For ledger-backed replay protection
             permit_issuer = permit_token.issuer  # For nonce reconstruction
             permit_subject = permit_token.subject  # For nonce reconstruction
-            permit_max_executions = (
-                permit_token.max_executions
-            )  # For nonce reconstruction
+            permit_max_executions = permit_token.max_executions  # For nonce reconstruction
 
             if not permit_verification_result.is_allowed():
                 return self._deny_permit(
@@ -349,9 +347,7 @@ class BaseKernel(Kernel):
                 permit_digest=permit_token.permit_id,
                 constraints=permit_token.constraints,
                 max_time_ms=permit_token.constraints.get("max_time_ms"),
-                forbidden_params=tuple(
-                    permit_token.constraints.get("forbidden_params", [])
-                ),
+                forbidden_params=tuple(permit_token.constraints.get("forbidden_params", [])),
                 tool_name=request.tool_call.name if request.tool_call else "",
                 params=request_params.copy(),  # Immutable snapshot
                 decision=Decision.ALLOW,
@@ -418,9 +414,7 @@ class BaseKernel(Kernel):
                 ),
                 idempotency_key=request.request_id,
                 max_time_ms=(
-                    decision_envelope.max_time_ms
-                    if decision_envelope is not None
-                    else None
+                    decision_envelope.max_time_ms if decision_envelope is not None else None
                 ),
                 max_calls=1,
                 call_index=1,
@@ -690,9 +684,7 @@ class BaseKernel(Kernel):
     def set_runtime_hooks(
         self,
         *,
-        before_execute: Optional[
-            Callable[[ExecutionContext, ToolCall], Optional[str]]
-        ] = None,
+        before_execute: Optional[Callable[[ExecutionContext, ToolCall], Optional[str]]] = None,
         after_execute: Optional[
             Callable[[ExecutionContext, ToolCall, RuntimeExecutionResult], None]
         ] = None,

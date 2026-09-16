@@ -8,7 +8,6 @@ from typing import Optional
 
 from kernels.common.types import KernelState
 
-
 # Allowed transitions: from_state -> set of allowed to_states
 ALLOWED_TRANSITIONS: dict[KernelState, frozenset[KernelState]] = {
     KernelState.BOOTING: frozenset({KernelState.IDLE, KernelState.HALTED}),

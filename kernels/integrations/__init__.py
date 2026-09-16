@@ -4,22 +4,20 @@ KERNELS Integrations
 Adapters and integrations for popular frameworks.
 """
 
+from kernels.integrations.autogpt_adapter import (
+    AutoGPTAdapter,
+    AutoGPTCommandResult,
+    AutonomousLoopMonitor,
+    create_autogpt_adapter,
+)
+from kernels.integrations.crewai_adapter import (
+    CrewAIAdapter,
+    CrewAIToolResult,
+    GovernedCrewAITool,
+    create_crewai_adapter,
+)
 from kernels.integrations.fastapi_adapter import create_fastapi_app
 from kernels.integrations.flask_adapter import create_flask_app
-from kernels.integrations.mcp_adapter import MCPAdapter
-from kernels.integrations.langchain_adapter import (
-    LangChainAdapter,
-    GovernedTool,
-    LangChainToolResult,
-    create_langchain_adapter,
-)
-from kernels.integrations.huggingface_adapter import (
-    HuggingFaceAdapter,
-    GovernedHFTool,
-    HFToolResult,
-    PermitInjector,
-    create_huggingface_adapter,
-)
 from kernels.integrations.generic_adapter import (
     GenericAdapter,
     MoltbookAdapter,
@@ -27,17 +25,18 @@ from kernels.integrations.generic_adapter import (
     create_generic_adapter,
     create_moltbook_adapter,
 )
-from kernels.integrations.crewai_adapter import (
-    CrewAIAdapter,
-    GovernedCrewAITool,
-    CrewAIToolResult,
-    create_crewai_adapter,
+from kernels.integrations.huggingface_adapter import (
+    GovernedHFTool,
+    HFToolResult,
+    HuggingFaceAdapter,
+    PermitInjector,
+    create_huggingface_adapter,
 )
-from kernels.integrations.autogpt_adapter import (
-    AutoGPTAdapter,
-    AutoGPTCommandResult,
-    AutonomousLoopMonitor,
-    create_autogpt_adapter,
+from kernels.integrations.langchain_adapter import (
+    GovernedTool,
+    LangChainAdapter,
+    LangChainToolResult,
+    create_langchain_adapter,
 )
 from kernels.integrations.langgraph_adapter import (
     LangGraphAdapter,
@@ -45,6 +44,7 @@ from kernels.integrations.langgraph_adapter import (
     WorkflowInvariant,
     create_langgraph_adapter,
 )
+from kernels.integrations.mcp_adapter import MCPAdapter
 
 __all__ = [
     # Deployment/Serving

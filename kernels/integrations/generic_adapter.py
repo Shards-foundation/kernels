@@ -23,16 +23,16 @@ Usage:
 
 from __future__ import annotations
 
-import uuid
 import functools
+import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Callable, Dict, Optional
 
-from kernels.common.types import KernelRequest, ToolCall, Decision
+from kernels.common.errors import PermitError
+from kernels.common.types import Decision, KernelRequest, ToolCall
+from kernels.permits import PermitToken
 from kernels.variants.base import BaseKernel
 from kernels.variants.strict_kernel import StrictKernel
-from kernels.permits import PermitToken
-from kernels.common.errors import PermitError
 
 
 @dataclass

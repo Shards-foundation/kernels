@@ -6,8 +6,8 @@ Fluent builders for constructing requests and policies.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
 import uuid
+from typing import Any, Dict, List, Optional
 
 from kernels.common.types import Request, ToolCall
 from kernels.jurisdiction.policy import JurisdictionPolicy
@@ -52,9 +52,7 @@ class RequestBuilder:
         self._intent = intent
         return self
 
-    def with_tool(
-        self, name: str, params: Optional[Dict[str, Any]] = None
-    ) -> RequestBuilder:
+    def with_tool(self, name: str, params: Optional[Dict[str, Any]] = None) -> RequestBuilder:
         """Set tool call."""
         self._tool_name = name
         self._tool_params = params or {}

@@ -39,9 +39,9 @@ Author: KERNELS Team
 License: MIT
 """
 
-from typing import Callable, Optional, Dict, Any, Type, List
-from dataclasses import dataclass
 import uuid
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, Type
 
 # CrewAI imports (these may not be installed, so we handle gracefully)
 try:
@@ -62,9 +62,9 @@ except ImportError:
 
 # KERNELS imports
 from kernels.common.types import (
+    Decision,
     KernelRequest,
     ToolCall,
-    Decision,
 )
 from kernels.permits import PermitToken
 from kernels.variants.base import BaseKernel
@@ -160,9 +160,7 @@ class GovernedCrewAITool(BaseTool if CREWAI_AVAILABLE else object):
                 continue
 
             # Determine type annotation
-            param_type = (
-                param.annotation if param.annotation != inspect.Parameter.empty else str
-            )
+            param_type = param.annotation if param.annotation != inspect.Parameter.empty else str
 
             # Create Field
             fields[param_name] = (
@@ -282,9 +280,7 @@ class CrewAIAdapter:
             auto_register: Auto-register tools in kernel dispatcher
         """
         if not CREWAI_AVAILABLE:
-            raise ImportError(
-                "CrewAI is not installed. Install with: pip install crewai"
-            )
+            raise ImportError("CrewAI is not installed. Install with: pip install crewai")
 
         self.kernel = kernel
         self.default_actor = actor

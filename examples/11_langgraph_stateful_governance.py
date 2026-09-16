@@ -45,16 +45,15 @@ Usage:
     python examples/11_langgraph_stateful_governance.py
 """
 
-from typing import Dict, Any
 import json
 import os
+from typing import Any, Dict
 
 # KERNELS imports
 from kernels.common.types import KernelConfig, VirtualClock
-from kernels.variants.strict_kernel import StrictKernel
 from kernels.integrations.langgraph_adapter import LangGraphAdapter
 from kernels.permits import PermitBuilder
-
+from kernels.variants.strict_kernel import StrictKernel
 
 # ============================================================================
 # E-commerce Order Processing Workflow
@@ -216,17 +215,14 @@ def main():
     adapter.add_invariant(
         name="budget_limit",
         description="Total price must not exceed customer budget",
-        validator=lambda state: state.get("total_price", 0)
-        <= state.get("customer_budget", 10000),
+        validator=lambda state: state.get("total_price", 0) <= state.get("customer_budget", 10000),
         enforce=True,
     )
 
     adapter.add_invariant(
         name="positive_inventory",
         description="Inventory levels must remain non-negative",
-        validator=lambda state: all(
-            qty >= 0 for qty in state.get("inventory", {}).values()
-        ),
+        validator=lambda state: all(qty >= 0 for qty in state.get("inventory", {}).values()),
         enforce=True,
     )
 
@@ -234,8 +230,7 @@ def main():
         name="payment_before_shipping",
         description="Payment must be processed before shipping",
         validator=lambda state: (
-            not state.get("order_shipped", False)
-            or state.get("payment_processed", False)
+            not state.get("order_shipped", False) or state.get("payment_processed", False)
         ),
         enforce=True,
     )
@@ -454,9 +449,7 @@ def main():
     print()
 
     # Step 4: Send confirmation
-    workflow_state = governed_confirmation(
-        workflow_state, permit_token=confirmation_permit
-    )
+    workflow_state = governed_confirmation(workflow_state, permit_token=confirmation_permit)
     print(f"✓ Confirmation sent: {workflow_state['confirmation_sent']}")
     print()
 

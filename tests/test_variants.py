@@ -11,10 +11,10 @@ from kernels.common.types import (
     ToolCall,
     VirtualClock,
 )
-from kernels.variants.strict_kernel import StrictKernel
-from kernels.variants.permissive_kernel import PermissiveKernel
-from kernels.variants.evidence_first_kernel import EvidenceFirstKernel
 from kernels.variants.dual_channel_kernel import DualChannelKernel
+from kernels.variants.evidence_first_kernel import EvidenceFirstKernel
+from kernels.variants.permissive_kernel import PermissiveKernel
+from kernels.variants.strict_kernel import StrictKernel
 
 
 def make_config(kernel_id: str, variant: str) -> KernelConfig:

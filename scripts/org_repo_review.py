@@ -9,9 +9,10 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, List, Optional
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -84,9 +85,7 @@ def resolve_repo_checks(repo_path: Path) -> List[str]:
     if package_json.exists():
         if bun_lock.exists():
             checks.append("bun install")
-            checks.extend(
-                ["bun run lint", "bun run format", "bun run typecheck", "bun test"]
-            )
+            checks.extend(["bun run lint", "bun run format", "bun run typecheck", "bun test"])
         elif pnpm_lock.exists():
             checks.append("pnpm install --frozen-lockfile")
             checks.extend(
@@ -109,21 +108,15 @@ def resolve_repo_checks(repo_path: Path) -> List[str]:
             )
         else:
             checks.append("npm ci")
-            checks.extend(
-                ["npm run lint", "npm run format", "npm run typecheck", "npm run test"]
-            )
+            checks.extend(["npm run lint", "npm run format", "npm run typecheck", "npm run test"])
 
-    if (repo_path / "pyproject.toml").exists() or (
-        repo_path / "requirements.txt"
-    ).exists():
+    if (repo_path / "pyproject.toml").exists() or (repo_path / "requirements.txt").exists():
         checks.extend(["python -m pip install -r requirements.txt", "python -m pytest"])
 
     if (repo_path / "foundry.toml").exists():
         checks.extend(["forge test", "slither ."])
 
-    if (repo_path / "hardhat.config.ts").exists() or (
-        repo_path / "hardhat.config.js"
-    ).exists():
+    if (repo_path / "hardhat.config.ts").exists() or (repo_path / "hardhat.config.js").exists():
         checks.extend(["npx hardhat test", "npm audit --production"])
 
     return checks
@@ -244,10 +237,7 @@ def main() -> int:
             review.warnings.append("No known checks detected for this repository.")
 
         for command in checks:
-            if (
-                "requirements.txt" in command
-                and not (repo_path / "requirements.txt").exists()
-            ):
+            if "requirements.txt" in command and not (repo_path / "requirements.txt").exists():
                 review.warnings.append(
                     "Skipped Python requirements install: requirements.txt missing."
                 )

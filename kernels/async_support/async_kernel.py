@@ -9,14 +9,14 @@ from __future__ import annotations
 import asyncio
 from typing import Any, Dict, List, Optional
 
-from kernels.common.types import Request, Receipt, Decision, KernelState
+from kernels.audit.ledger import AuditEntry, AuditLedger
 from kernels.common.errors import StateError, ValidationError
 from kernels.common.time import monotonic_ms
-from kernels.audit.ledger import AuditLedger, AuditEntry
+from kernels.common.types import Decision, KernelState, Receipt, Request
+from kernels.execution.dispatcher import Dispatcher
+from kernels.execution.tools import ToolRegistry
 from kernels.jurisdiction.policy import JurisdictionPolicy
 from kernels.state.machine import StateMachine
-from kernels.execution.tools import ToolRegistry
-from kernels.execution.dispatcher import Dispatcher
 
 
 class AsyncBaseKernel:
@@ -154,9 +154,7 @@ class AsyncBaseKernel:
         if not request.intent:
             raise ValidationError("intent is required")
 
-    async def _arbitrate_request(
-        self, request: Request
-    ) -> tuple[Decision, Optional[str]]:
+    async def _arbitrate_request(self, request: Request) -> tuple[Decision, Optional[str]]:
         """Evaluate request against policy. Override in subclasses."""
         # Check actor
         if request.actor not in self.policy.allowed_actors:
@@ -178,9 +176,7 @@ class AsyncBaseKernel:
 
         return Decision.ALLOW, None
 
-    async def _execute_request(
-        self, request: Request
-    ) -> tuple[Optional[Dict], Optional[str]]:
+    async def _execute_request(self, request: Request) -> tuple[Optional[Dict], Optional[str]]:
         """Execute the tool call. Override in subclasses."""
         if not request.tool_call:
             return None, None
@@ -194,9 +190,7 @@ class AsyncBaseKernel:
                 else:
                     # Run sync tool in executor
                     loop = asyncio.get_event_loop()
-                    result = await loop.run_in_executor(
-                        None, tool_fn, request.tool_call.params
-                    )
+                    result = await loop.run_in_executor(None, tool_fn, request.tool_call.params)
                 return result, None
             else:
                 return None, f"Tool {request.tool_call.name} not found"
@@ -293,14 +287,9 @@ class AsyncPermissiveKernel(AsyncBaseKernel):
             )
         super().__init__(kernel_id, policy, tool_registry)
 
-    async def _arbitrate_request(
-        self, request: Request
-    ) -> tuple[Decision, Optional[str]]:
+    async def _arbitrate_request(self, request: Request) -> tuple[Decision, Optional[str]]:
         # Permissive: allow wildcards
-        if (
-            "*" in self.policy.allowed_actors
-            or request.actor in self.policy.allowed_actors
-        ):
+        if "*" in self.policy.allowed_actors or request.actor in self.policy.allowed_actors:
             if request.tool_call:
                 if (
                     "*" in self.policy.allowed_tools

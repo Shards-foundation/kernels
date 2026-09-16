@@ -87,10 +87,7 @@ class PermitToken:
             raise ValueError("max_executions must be int >= 1")
         if not isinstance(self.valid_from_ms, int) or self.valid_from_ms < 0:
             raise ValueError("valid_from_ms must be int >= 0")
-        if (
-            not isinstance(self.valid_until_ms, int)
-            or self.valid_until_ms <= self.valid_from_ms
-        ):
+        if not isinstance(self.valid_until_ms, int) or self.valid_until_ms <= self.valid_from_ms:
             raise ValueError("valid_until_ms must be int > valid_from_ms")
         if not isinstance(self.evidence_hash, str):
             raise ValueError("evidence_hash must be str")
@@ -159,8 +156,7 @@ def _sort_dict_recursive(d: dict[str, Any]) -> dict[str, Any]:
             result[key] = _sort_dict_recursive(value)
         elif isinstance(value, list):
             result[key] = [
-                _sort_dict_recursive(item) if isinstance(item, dict) else item
-                for item in value
+                _sort_dict_recursive(item) if isinstance(item, dict) else item for item in value
             ]
         else:
             result[key] = value
@@ -211,9 +207,9 @@ def canonical_permit_bytes(
     if not exclude_signature:
         data["signature"] = permit.signature
 
-    return json.dumps(
-        data, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8")
+    return json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode(
+        "utf-8"
+    )
 
 
 def compute_permit_id(permit: PermitToken) -> str:
@@ -229,9 +225,7 @@ def compute_permit_id(permit: PermitToken) -> str:
         64-character hex string (SHA-256 digest)
     """
     # Exclude both permit_id and signature when computing ID
-    canonical = canonical_permit_bytes(
-        permit, exclude_signature=True, exclude_permit_id=True
-    )
+    canonical = canonical_permit_bytes(permit, exclude_signature=True, exclude_permit_id=True)
     return hashlib.sha256(canonical).hexdigest()
 
 
@@ -263,7 +257,7 @@ def deterministic_nonce(proposal_hash: str, sequence: int) -> str:
     Returns:
         32-character hex string
     """
-    data = f"{proposal_hash}:{sequence}".encode("utf-8")
+    data = f"{proposal_hash}:{sequence}".encode()
     return hashlib.sha256(data).hexdigest()[:32]
 
 
@@ -289,16 +283,12 @@ def sign_permit(permit: PermitToken, key: bytes, key_id: str) -> PermitToken:
     Returns:
         New permit with signature and key_id fields populated
     """
-    canonical = canonical_permit_bytes(
-        permit, exclude_signature=True, exclude_permit_id=False
-    )
+    canonical = canonical_permit_bytes(permit, exclude_signature=True, exclude_permit_id=False)
     sig = hmac.new(key, canonical, hashlib.sha256).hexdigest()
     return replace(permit, signature=sig, key_id=key_id)
 
 
-def verify_signature(
-    permit: PermitToken, keyring: dict[str, bytes]
-) -> PermitVerificationResult:
+def verify_signature(permit: PermitToken, keyring: dict[str, bytes]) -> PermitVerificationResult:
     """
     Verify permit signature against keyring.
 
@@ -316,29 +306,21 @@ def verify_signature(
     """
     # Check 1: Key ID known
     if permit.key_id not in keyring:
-        return PermitVerificationResult(
-            status=Decision.DENY, reasons=["UNKNOWN_KEY_ID"]
-        )
+        return PermitVerificationResult(status=Decision.DENY, reasons=["UNKNOWN_KEY_ID"])
 
     key = keyring[permit.key_id]
 
     # Check 2: Signature valid
-    canonical = canonical_permit_bytes(
-        permit, exclude_signature=True, exclude_permit_id=False
-    )
+    canonical = canonical_permit_bytes(permit, exclude_signature=True, exclude_permit_id=False)
     expected_sig = hmac.new(key, canonical, hashlib.sha256).hexdigest()
 
     if not hmac.compare_digest(permit.signature, expected_sig):
-        return PermitVerificationResult(
-            status=Decision.DENY, reasons=["SIGNATURE_INVALID"]
-        )
+        return PermitVerificationResult(status=Decision.DENY, reasons=["SIGNATURE_INVALID"])
 
     # Check 3: Permit ID valid
     expected_id = compute_permit_id(permit)
     if permit.permit_id != expected_id:
-        return PermitVerificationResult(
-            status=Decision.DENY, reasons=["PERMIT_ID_MISMATCH"]
-        )
+        return PermitVerificationResult(status=Decision.DENY, reasons=["PERMIT_ID_MISMATCH"])
 
     return PermitVerificationResult(status=Decision.ALLOW, reasons=[])
 
@@ -525,9 +507,7 @@ def verify_permit(
     return PermitVerificationResult(status=Decision.ALLOW, reasons=[])
 
 
-def _params_satisfy_permit(
-    request_params: dict[str, Any], permit_params: dict[str, Any]
-) -> bool:
+def _params_satisfy_permit(request_params: dict[str, Any], permit_params: dict[str, Any]) -> bool:
     """
     Check if request params are satisfied by permit params.
 
@@ -553,9 +533,7 @@ def _params_satisfy_permit(
     return True
 
 
-def _validate_constraints(
-    constraints: dict[str, Any], request_params: dict[str, Any]
-) -> list[str]:
+def _validate_constraints(constraints: dict[str, Any], request_params: dict[str, Any]) -> list[str]:
     """
     Validate request against permit constraints.
 

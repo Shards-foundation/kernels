@@ -44,10 +44,9 @@ import os
 
 # KERNELS imports
 from kernels.common.types import KernelConfig, VirtualClock
-from kernels.variants.strict_kernel import StrictKernel
 from kernels.integrations.generic_adapter import GenericAdapter
 from kernels.permits import PermitBuilder
-
+from kernels.variants.strict_kernel import StrictKernel
 
 # ============================================================================
 # OpenClaw AgentSkill Implementations (Python versions)

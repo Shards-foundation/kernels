@@ -8,13 +8,13 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Callable, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
-from kernels.common.types import KernelRequest, ToolCall, Decision
+from kernels.common.errors import PermitError
+from kernels.common.types import Decision, KernelRequest, ToolCall
+from kernels.permits import PermitToken
 from kernels.variants.base import BaseKernel
 from kernels.variants.strict_kernel import StrictKernel
-from kernels.permits import PermitToken
-from kernels.common.errors import PermitError
 
 
 @dataclass
@@ -133,9 +133,7 @@ class GovernedTool:
 
         # Extract audit hash
         evidence = self.kernel.export_evidence()
-        audit_hash = (
-            evidence.ledger_entries[-1].entry_hash if evidence.ledger_entries else None
-        )
+        audit_hash = evidence.ledger_entries[-1].entry_hash if evidence.ledger_entries else None
 
         # Build result
         if receipt.decision == Decision.ALLOW:
@@ -185,9 +183,7 @@ class GovernedTool:
 
         return result.result
 
-    def __call__(
-        self, *args, permit_token: Optional[PermitToken] = None, **kwargs
-    ) -> Any:
+    def __call__(self, *args, permit_token: Optional[PermitToken] = None, **kwargs) -> Any:
         """Direct call syntax."""
         result = self.run(permit_token=permit_token, **kwargs)
 

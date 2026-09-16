@@ -63,7 +63,7 @@ jobs:
           python -m venv .tmp/wheel-smoke
           .tmp/wheel-smoke/bin/python -m pip install --no-deps dist/*.whl
           cd /tmp
-          .tmp/wheel-smoke/bin/python - <<'PY'
+          "$GITHUB_WORKSPACE/.tmp/wheel-smoke/bin/python" - <<'PY'
           import implementations
           import kernels
           from implementations.permits_threadsafe import ThreadSafeNonceRegistry

@@ -8,12 +8,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional
 
-from kernels.common.types import Request, ToolCall, Decision
+from kernels.common.types import Decision, Request, ToolCall
+from kernels.jurisdiction.policy import JurisdictionPolicy
 from kernels.variants.base import BaseKernel
 from kernels.variants.strict_kernel import StrictKernel
-from kernels.jurisdiction.policy import JurisdictionPolicy
 
 
 @dataclass

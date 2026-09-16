@@ -143,7 +143,7 @@ class RuntimeState:
     created_artifacts: frozenset[str] = frozenset()
 
     @staticmethod
-    def reduce_events(events: list[RuntimeEvent]) -> "RuntimeState":
+    def reduce_events(events: list[RuntimeEvent]) -> RuntimeState:
         """Reconstruct a minimal state projection from runtime events."""
         completed_nodes: set[str] = set()
         failed_nodes: set[str] = set()
@@ -187,9 +187,7 @@ class KernelRuntime:
     def __init__(
         self,
         dispatcher: Dispatcher,
-        before_execute: Optional[
-            Callable[[ExecutionContext, ToolCall], Optional[str]]
-        ] = None,
+        before_execute: Optional[Callable[[ExecutionContext, ToolCall], Optional[str]]] = None,
         after_execute: Optional[
             Callable[[ExecutionContext, ToolCall, RuntimeExecutionResult], None]
         ] = None,
@@ -219,9 +217,7 @@ class KernelRuntime:
     def set_hooks(
         self,
         *,
-        before_execute: Optional[
-            Callable[[ExecutionContext, ToolCall], Optional[str]]
-        ] = None,
+        before_execute: Optional[Callable[[ExecutionContext, ToolCall], Optional[str]]] = None,
         after_execute: Optional[
             Callable[[ExecutionContext, ToolCall, RuntimeExecutionResult], None]
         ] = None,
@@ -266,9 +262,7 @@ class KernelRuntime:
             self._event_sink(event)
         return event
 
-    def _compute_idempotency_key(
-        self, context: ExecutionContext, tool_call: ToolCall
-    ) -> str:
+    def _compute_idempotency_key(self, context: ExecutionContext, tool_call: ToolCall) -> str:
         if context.idempotency_key is not None:
             return context.idempotency_key
         return compute_hash_dict(
@@ -291,9 +285,7 @@ class KernelRuntime:
         tool_call: ToolCall,
     ) -> ExecutionIdentity:
         input_hashes = tuple(
-            sorted(
-                h for h in context.metadata.get("input_hashes", "").split(",") if h
-            )
+            sorted(h for h in context.metadata.get("input_hashes", "").split(",") if h)
         )
         value = compute_hash_dict(
             {
@@ -428,16 +420,14 @@ class KernelRuntime:
         elapsed_ms = int((perf_counter() - start) * 1000)
 
         budget_exceeded = (
-            effective_context.max_time_ms is not None
-            and elapsed_ms > effective_context.max_time_ms
+            effective_context.max_time_ms is not None and elapsed_ms > effective_context.max_time_ms
         )
         if budget_exceeded and dispatcher_result.success:
             dispatcher_result = ExecutionResult(
                 success=False,
                 tool_name=tool_call.name,
                 error=(
-                    f"Execution budget exceeded: {elapsed_ms}ms > "
-                    f"{effective_context.max_time_ms}ms"
+                    f"Execution budget exceeded: {elapsed_ms}ms > {effective_context.max_time_ms}ms"
                 ),
             )
 
@@ -459,9 +449,7 @@ class KernelRuntime:
                             "execution_identity": effective_context.execution_identity,
                         }
                     ),
-                    output_hash=compute_hash_dict(
-                        {"result": result.dispatcher_result.result}
-                    ),
+                    output_hash=compute_hash_dict({"result": result.dispatcher_result.result}),
                     tool_name=tool_call.name,
                     ts_ms=self._now_ms(),
                 )
@@ -500,8 +488,7 @@ class KernelRuntime:
             for dependency_id in node.depends_on:
                 if dependency_id not in nodes_by_id:
                     raise ValueError(
-                        f"Graph node '{node.node_id}' depends on unknown node "
-                        f"'{dependency_id}'"
+                        f"Graph node '{node.node_id}' depends on unknown node '{dependency_id}'"
                     )
 
         visited: set[str] = set()
@@ -527,9 +514,7 @@ class KernelRuntime:
 
         return tuple(order)
 
-    def execute_graph(
-        self, graph: TaskGraph, context: ExecutionContext
-    ) -> GraphExecutionResult:
+    def execute_graph(self, graph: TaskGraph, context: ExecutionContext) -> GraphExecutionResult:
         """Execute a deterministic DAG of tool calls."""
         self._emit(
             "graph.started",
@@ -540,9 +525,7 @@ class KernelRuntime:
         order = self._resolve_execution_order(graph)
         budget = GraphBudget(
             total_calls=context.max_calls if context.max_calls is not None else len(order),
-            remaining_calls=context.max_calls
-            if context.max_calls is not None
-            else len(order),
+            remaining_calls=context.max_calls if context.max_calls is not None else len(order),
         )
         results: dict[str, RuntimeExecutionResult] = {}
         produced_artifacts: dict[str, Artifact] = {}
@@ -599,10 +582,7 @@ class KernelRuntime:
                         {
                             "graph_id": graph.graph_id,
                             "node_id": node_id,
-                            "error": (
-                                f"Missing input artifact: "
-                                f"{artifact_ref.artifact_id}"
-                            ),
+                            "error": (f"Missing input artifact: {artifact_ref.artifact_id}"),
                         },
                     )
                     return GraphExecutionResult(
@@ -623,10 +603,7 @@ class KernelRuntime:
                         {
                             "graph_id": graph.graph_id,
                             "node_id": node_id,
-                            "error": (
-                                "Artifact type mismatch for "
-                                f"{artifact_ref.artifact_id}"
-                            ),
+                            "error": (f"Artifact type mismatch for {artifact_ref.artifact_id}"),
                         },
                     )
                     return GraphExecutionResult(
@@ -635,15 +612,11 @@ class KernelRuntime:
                         execution_order=tuple(results.keys()),
                         output_artifacts=produced_artifacts,
                         success=False,
-                        error=(
-                            "Artifact type mismatch for "
-                            f"{artifact_ref.artifact_id}"
-                        ),
+                        error=(f"Artifact type mismatch for {artifact_ref.artifact_id}"),
                     )
                 if (
                     artifact_ref.required_schema_version is not None
-                    and artifact.schema_version
-                    != artifact_ref.required_schema_version
+                    and artifact.schema_version != artifact_ref.required_schema_version
                 ):
                     self._emit(
                         "node.failed",
@@ -651,10 +624,7 @@ class KernelRuntime:
                         {
                             "graph_id": graph.graph_id,
                             "node_id": node_id,
-                            "error": (
-                                "Artifact schema mismatch for "
-                                f"{artifact_ref.artifact_id}"
-                            ),
+                            "error": (f"Artifact schema mismatch for {artifact_ref.artifact_id}"),
                         },
                     )
                     return GraphExecutionResult(
@@ -663,10 +633,7 @@ class KernelRuntime:
                         execution_order=tuple(results.keys()),
                         output_artifacts=produced_artifacts,
                         success=False,
-                        error=(
-                            "Artifact schema mismatch for "
-                            f"{artifact_ref.artifact_id}"
-                        ),
+                        error=(f"Artifact schema mismatch for {artifact_ref.artifact_id}"),
                     )
                 input_artifact_ids.append(artifact.artifact_id)
                 input_hashes.append(artifact.value_hash)

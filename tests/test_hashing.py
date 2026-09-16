@@ -3,10 +3,10 @@
 import unittest
 
 from kernels.common.hashing import (
-    compute_hash,
-    compute_hash_str,
-    compute_hash_dict,
     compute_chain_hash,
+    compute_hash,
+    compute_hash_dict,
+    compute_hash_str,
     genesis_hash,
 )
 

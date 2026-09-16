@@ -6,8 +6,8 @@ behavior. Invalid transitions raise StateError.
 
 from typing import Callable, Optional
 
-from kernels.common.types import KernelState
 from kernels.common.errors import StateError
+from kernels.common.types import KernelState
 from kernels.state.transitions import can_transition, is_terminal
 
 
@@ -66,14 +66,10 @@ class StateMachine:
             StateError: If transition is not allowed.
         """
         if self.is_terminal:
-            raise StateError(
-                f"Cannot transition from terminal state {self._state.value}"
-            )
+            raise StateError(f"Cannot transition from terminal state {self._state.value}")
 
         if not can_transition(self._state, to_state):
-            raise StateError(
-                f"Invalid transition: {self._state.value} -> {to_state.value}"
-            )
+            raise StateError(f"Invalid transition: {self._state.value} -> {to_state.value}")
 
         from_state = self._state
         self._state = to_state
@@ -120,9 +116,7 @@ class StateMachine:
             StateError: If not in expected state.
         """
         if self._state != expected:
-            raise StateError(
-                f"Expected state {expected.value}, but in {self._state.value}"
-            )
+            raise StateError(f"Expected state {expected.value}, but in {self._state.value}")
 
     def assert_not_halted(self) -> None:
         """Assert that the machine is not halted.

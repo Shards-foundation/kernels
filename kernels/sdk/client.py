@@ -6,15 +6,15 @@ HTTP client for interacting with KERNELS servers.
 
 from __future__ import annotations
 
+import asyncio
 import json
-import urllib.request
 import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
-import asyncio
 
-from kernels.common.types import Request, Receipt, Decision
 from kernels.common.errors import KernelError
+from kernels.common.types import Decision, Receipt, Request
 
 
 @dataclass

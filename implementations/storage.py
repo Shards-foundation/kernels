@@ -90,9 +90,7 @@ class SQLiteAuditStorage:
                 table_exists = connection.execute(
                     "SELECT 1 FROM sqlite_master WHERE type='table' AND name='audit_entries'"
                 ).fetchone()
-                entry_count = connection.execute(
-                    "SELECT COUNT(1) FROM audit_entries"
-                ).fetchone()
+                entry_count = connection.execute("SELECT COUNT(1) FROM audit_entries").fetchone()
         except sqlite3.Error as exc:
             return {
                 "ok": False,

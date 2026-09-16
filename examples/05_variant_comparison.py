@@ -11,10 +11,10 @@ from kernels.common.types import (
     ToolCall,
     VirtualClock,
 )
-from kernels.variants.strict_kernel import StrictKernel
-from kernels.variants.permissive_kernel import PermissiveKernel
-from kernels.variants.evidence_first_kernel import EvidenceFirstKernel
 from kernels.variants.dual_channel_kernel import DualChannelKernel
+from kernels.variants.evidence_first_kernel import EvidenceFirstKernel
+from kernels.variants.permissive_kernel import PermissiveKernel
+from kernels.variants.strict_kernel import StrictKernel
 
 
 def make_config(kernel_id: str, variant: str) -> KernelConfig:
@@ -38,9 +38,7 @@ def test_variant(kernel, variant_name: str, requests: list) -> None:
         print(f"  Decision: {receipt.decision.value}")
         print(f"  Status: {receipt.status.value}")
         if receipt.error:
-            error_preview = (
-                receipt.error[:60] + "..." if len(receipt.error) > 60 else receipt.error
-            )
+            error_preview = receipt.error[:60] + "..." if len(receipt.error) > 60 else receipt.error
             print(f"  Error: {error_preview}")
         if receipt.tool_result is not None:
             print(f"  Result: {receipt.tool_result}")

@@ -58,9 +58,7 @@ def compute_hash_dict(data: dict[str, Any], algorithm: str = "sha256") -> str:
     return compute_hash(serialized.encode("utf-8"), algorithm)
 
 
-def compute_chain_hash(
-    prev_hash: str, entry_data: str, algorithm: str = "sha256"
-) -> str:
+def compute_chain_hash(prev_hash: str, entry_data: str, algorithm: str = "sha256") -> str:
     """Compute hash for a chain entry.
 
     Combines the previous hash with entry data to create a chain link.

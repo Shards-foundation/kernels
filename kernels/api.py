@@ -12,41 +12,33 @@ Usage:
 from __future__ import annotations
 
 # -----------------------------------------------------------------------------
+# Evidence surface (stable)
+# -----------------------------------------------------------------------------
+from kernels.audit.ledger import AuditLedger
+from kernels.audit.replay import (
+    ReplayResult,
+    replay_and_verify,
+    verify_evidence_bundle,
+)
+
+# -----------------------------------------------------------------------------
 # Core types (stable)
 # -----------------------------------------------------------------------------
 from kernels.common.types import (
     Decision,
     KernelConfig,
-    KernelRequest,
     KernelReceipt,
+    KernelRequest,
     KernelState,
     ReceiptStatus,
     ToolCall,
     VirtualClock,
 )
-
-# -----------------------------------------------------------------------------
-# Interfaces / protocols (stable)
-# -----------------------------------------------------------------------------
-from kernels.variants.base import Kernel, BaseKernel
-
-# -----------------------------------------------------------------------------
-# Kernel variants (stable)
-# -----------------------------------------------------------------------------
-from kernels.variants.strict_kernel import StrictKernel
-from kernels.variants.permissive_kernel import PermissiveKernel
-from kernels.variants.evidence_first_kernel import EvidenceFirstKernel
-from kernels.variants.dual_channel_kernel import DualChannelKernel
-
-# -----------------------------------------------------------------------------
-# Tooling surface (stable)
-# -----------------------------------------------------------------------------
-from kernels.execution.tools import ToolRegistry
 from kernels.core.runtime import (
     Artifact,
     ArtifactRef,
-    ExecutionIdentity,
     ExecutionContext,
+    ExecutionIdentity,
     GraphBudget,
     GraphExecutionResult,
     KernelRuntime,
@@ -58,14 +50,9 @@ from kernels.core.runtime import (
 )
 
 # -----------------------------------------------------------------------------
-# Evidence surface (stable)
+# Tooling surface (stable)
 # -----------------------------------------------------------------------------
-from kernels.audit.ledger import AuditLedger
-from kernels.audit.replay import (
-    replay_and_verify,
-    verify_evidence_bundle,
-    ReplayResult,
-)
+from kernels.execution.tools import ToolRegistry
 
 # -----------------------------------------------------------------------------
 # Jurisdiction (stable)
@@ -87,6 +74,19 @@ from kernels.permits import (
     verify_permit,
     verify_signature,
 )
+
+# -----------------------------------------------------------------------------
+# Interfaces / protocols (stable)
+# -----------------------------------------------------------------------------
+from kernels.variants.base import BaseKernel, Kernel
+from kernels.variants.dual_channel_kernel import DualChannelKernel
+from kernels.variants.evidence_first_kernel import EvidenceFirstKernel
+from kernels.variants.permissive_kernel import PermissiveKernel
+
+# -----------------------------------------------------------------------------
+# Kernel variants (stable)
+# -----------------------------------------------------------------------------
+from kernels.variants.strict_kernel import StrictKernel
 
 # -----------------------------------------------------------------------------
 # Public API surface

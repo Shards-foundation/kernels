@@ -7,6 +7,8 @@ replay.
 
 import json
 
+from kernels.audit.replay import verify_evidence_bundle
+from kernels.common.codec import audit_entry_to_dict
 from kernels.common.types import (
     KernelConfig,
     KernelRequest,
@@ -14,8 +16,6 @@ from kernels.common.types import (
     VirtualClock,
 )
 from kernels.variants.strict_kernel import StrictKernel
-from kernels.audit.replay import verify_evidence_bundle
-from kernels.common.codec import audit_entry_to_dict
 
 
 def main() -> None:
@@ -77,9 +77,7 @@ def main() -> None:
         "variant": evidence.variant,
         "exported_at_ms": evidence.exported_at_ms,
         "root_hash": evidence.root_hash,
-        "ledger_entries": [
-            audit_entry_to_dict(entry) for entry in evidence.ledger_entries
-        ],
+        "ledger_entries": [audit_entry_to_dict(entry) for entry in evidence.ledger_entries],
     }
 
     # Serialize to JSON (simulating storage/transmission)

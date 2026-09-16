@@ -36,17 +36,17 @@ Author: KERNELS Team
 License: MIT
 """
 
-from typing import Callable, Optional, Dict, Any, List
+import time
+import uuid
 from dataclasses import dataclass
 from functools import wraps
-import uuid
-import time
+from typing import Any, Callable, Dict, List, Optional
 
 # KERNELS imports
 from kernels.common.types import (
+    Decision,
     KernelRequest,
     ToolCall,
-    Decision,
 )
 from kernels.permits import PermitToken
 from kernels.variants.base import BaseKernel
@@ -123,10 +123,7 @@ class AutonomousLoopMonitor:
             return True
 
         # Check iteration limit
-        if (
-            self.max_iterations is not None
-            and self.stats.total_iterations >= self.max_iterations
-        ):
+        if self.max_iterations is not None and self.stats.total_iterations >= self.max_iterations:
             self._halt("Maximum iterations reached")
             return True
 
@@ -138,10 +135,7 @@ class AutonomousLoopMonitor:
                 return True
 
         # Check denial limit
-        if (
-            self.max_denials is not None
-            and self.stats.commands_denied >= self.max_denials
-        ):
+        if self.max_denials is not None and self.stats.commands_denied >= self.max_denials:
             self._halt("Maximum denials reached")
             return True
 
@@ -311,9 +305,7 @@ class AutoGPTAdapter:
 
         # Create governed wrapper
         @wraps(func)
-        def governed_command(
-            permit_token: Optional[PermitToken] = None, **kwargs
-        ) -> str:
+        def governed_command(permit_token: Optional[PermitToken] = None, **kwargs) -> str:
             # Check autonomous loop monitor
             if self.monitor and self.monitor.should_halt():
                 halt_reason = self.monitor.get_halt_reason()

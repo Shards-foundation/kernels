@@ -11,21 +11,20 @@ Usage:
 """
 
 # Re-export the public API surface
+# Version
+from kernels._version import __version__
 from kernels.api import *  # noqa: F401, F403
 from kernels.api import __all__ as _api_all
 
-# Version
-from kernels._version import __version__
-
 # Errors (also part of public surface, but kept separate for clarity)
 from kernels.common.errors import (
-    KernelError,
-    BootError,
-    StateError,
-    JurisdictionError,
     AmbiguityError,
-    ToolError,
     AuditError,
+    BootError,
+    JurisdictionError,
+    KernelError,
+    StateError,
+    ToolError,
 )
 
 # Evidence bundle type

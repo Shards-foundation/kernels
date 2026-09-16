@@ -77,8 +77,10 @@ def extract_issue(issue_payload: Path) -> dict[str, Any]:
         title = payload.get("title", "Kernel improvement")
         body = payload.get("body", "No issue body provided.")
         taxonomy = extract_taxonomy_from_body(body)
-        failure_type = payload.get("failure_type") or taxonomy.get("failure_type") or classify_failure(
-            title, body
+        failure_type = (
+            payload.get("failure_type")
+            or taxonomy.get("failure_type")
+            or classify_failure(title, body)
         )
         repair_strategy = (
             payload.get("repair_strategy")

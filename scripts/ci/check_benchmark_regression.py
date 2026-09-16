@@ -35,9 +35,7 @@ def _median_map(payload: dict) -> dict[str, float]:
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print(
-            "Usage: check_benchmark_regression.py <current-json> <max-regression-ratio>"
-        )
+        print("Usage: check_benchmark_regression.py <current-json> <max-regression-ratio>")
         return 2
 
     current_path = Path(sys.argv[1])
@@ -48,9 +46,7 @@ def main() -> int:
         return 2
 
     if not BASELINE_PATH.exists():
-        print(
-            f"Baseline benchmark file not found at {BASELINE_PATH}; skipping regression gate."
-        )
+        print(f"Baseline benchmark file not found at {BASELINE_PATH}; skipping regression gate.")
         return 0
 
     current = _median_map(_load(current_path))

@@ -18,12 +18,12 @@ Verification checks:
   ✓ Decision envelope binding (TOCTOU protection)
 """
 
+import argparse
 import json
 import sys
-import argparse
 from dataclasses import dataclass
-from typing import Any, Dict, List
 from pathlib import Path
+from typing import Any, Dict, List
 
 # KERNELS imports
 from kernels.common.hashing import genesis_hash
@@ -198,9 +198,7 @@ class EvidenceVerifier:
                 return False
 
             if seq != expected_seq:
-                self.errors.append(
-                    f"Sequence gap at entry {i}: expected {expected_seq}, got {seq}"
-                )
+                self.errors.append(f"Sequence gap at entry {i}: expected {expected_seq}, got {seq}")
                 return False
 
             seen_seqs.add(seq)
@@ -224,9 +222,7 @@ class EvidenceVerifier:
         )
 
         if not has_permit_system:
-            self.warnings.append(
-                "No permit enforcement detected (keyring not configured)"
-            )
+            self.warnings.append("No permit enforcement detected (keyring not configured)")
             return True
 
         for i, entry in enumerate(self.entries):
@@ -281,9 +277,7 @@ class EvidenceVerifier:
             # Verify REPLAY_DETECTED is accurate
             if denial_reasons and "REPLAY_DETECTED" in denial_reasons:
                 if nonce_usage.get(permit_nonce, 0) == 0:
-                    self.warnings.append(
-                        f"Entry {i}: REPLAY_DETECTED but nonce not seen before"
-                    )
+                    self.warnings.append(f"Entry {i}: REPLAY_DETECTED but nonce not seen before")
 
         return True
 
@@ -318,9 +312,7 @@ class EvidenceVerifier:
             allowed = valid_transitions.get(state_from, [])
 
             if state_to not in allowed:
-                self.errors.append(
-                    f"Entry {i}: Invalid transition {state_from} → {state_to}"
-                )
+                self.errors.append(f"Entry {i}: Invalid transition {state_from} → {state_to}")
                 return False
 
         return True
@@ -332,26 +324,16 @@ class EvidenceVerifier:
         denies = sum(1 for e in self.entries if e.get("decision") == "DENY")
         halts = sum(1 for e in self.entries if e.get("decision") == "HALT")
 
-        permits_verified = sum(
-            1 for e in self.entries if e.get("permit_verification") == "ALLOW"
-        )
-        permits_denied = sum(
-            1 for e in self.entries if e.get("permit_verification") == "DENY"
-        )
+        permits_verified = sum(1 for e in self.entries if e.get("permit_verification") == "ALLOW")
+        permits_denied = sum(1 for e in self.entries if e.get("permit_verification") == "DENY")
         missing_permits = sum(
-            1
-            for e in self.entries
-            if "MISSING_PERMIT" in (e.get("permit_denial_reasons") or [])
+            1 for e in self.entries if "MISSING_PERMIT" in (e.get("permit_denial_reasons") or [])
         )
         replay_detected = sum(
-            1
-            for e in self.entries
-            if "REPLAY_DETECTED" in (e.get("permit_denial_reasons") or [])
+            1 for e in self.entries if "REPLAY_DETECTED" in (e.get("permit_denial_reasons") or [])
         )
 
-        tools_executed = [
-            e.get("tool_name") for e in self.entries if e.get("tool_name")
-        ]
+        tools_executed = [e.get("tool_name") for e in self.entries if e.get("tool_name")]
         unique_tools = set(tools_executed)
 
         self.stats = {
@@ -371,9 +353,7 @@ class EvidenceVerifier:
         }
 
 
-def verify_evidence(
-    evidence: Dict[str, Any], detailed: bool = False
-) -> VerificationResult:
+def verify_evidence(evidence: Dict[str, Any], detailed: bool = False) -> VerificationResult:
     """
     Verify evidence bundle.
 
@@ -404,7 +384,7 @@ def verify_evidence_file(filepath: str, detailed: bool = False) -> VerificationR
     Returns:
         VerificationResult
     """
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         evidence = json.load(f)
 
     return verify_evidence(evidence, detailed)

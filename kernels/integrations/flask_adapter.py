@@ -9,23 +9,23 @@ from __future__ import annotations
 from typing import Optional
 
 try:
-    from flask import Flask, request, jsonify
+    from flask import Flask, jsonify, request
 
     HAS_FLASK = True
 except ImportError:
     HAS_FLASK = False
 
 from kernels.common.types import Request, ToolCall
+from kernels.jurisdiction.policy import JurisdictionPolicy
 from kernels.variants.base import BaseKernel
 from kernels.variants.strict_kernel import StrictKernel
-from kernels.jurisdiction.policy import JurisdictionPolicy
 
 
 def create_flask_app(
     kernel: Optional[BaseKernel] = None,
     kernel_id: str = "flask-kernel",
     policy: Optional[JurisdictionPolicy] = None,
-) -> "Flask":
+) -> Flask:
     """
     Create a Flask app for the kernel.
 
@@ -172,7 +172,5 @@ def run_flask_server(
     """
     app = create_flask_app(kernel_id=kernel_id, policy=policy)
     if debug:
-        raise ValueError(
-            "Debug mode is disabled for security; run behind a proper debugger."
-        )
+        raise ValueError("Debug mode is disabled for security; run behind a proper debugger.")
     app.run(host=host, port=port)

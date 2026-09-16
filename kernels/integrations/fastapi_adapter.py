@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 try:
-    from fastapi import FastAPI, Depends
+    from fastapi import Depends, FastAPI
     from fastapi.middleware.cors import CORSMiddleware
     from pydantic import BaseModel
 
@@ -18,10 +18,9 @@ except ImportError:
     HAS_FASTAPI = False
 
 from kernels.common.types import Request, ToolCall
+from kernels.jurisdiction.policy import JurisdictionPolicy
 from kernels.variants.base import BaseKernel
 from kernels.variants.strict_kernel import StrictKernel
-from kernels.jurisdiction.policy import JurisdictionPolicy
-
 
 if HAS_FASTAPI:
 
@@ -79,7 +78,7 @@ def create_fastapi_app(
     title: str = "KERNELS API",
     version: str = "0.1.0",
     cors_origins: List[str] = ["*"],
-) -> "FastAPI":
+) -> FastAPI:
     """
     Create a FastAPI app for the kernel.
 

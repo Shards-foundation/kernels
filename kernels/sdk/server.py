@@ -7,14 +7,14 @@ HTTP server for exposing kernel functionality.
 from __future__ import annotations
 
 import json
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from typing import Any, Dict, Optional, Type
 import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Any, Dict, Optional, Type
 
 from kernels.common.types import Request, ToolCall
+from kernels.jurisdiction.policy import JurisdictionPolicy
 from kernels.variants.base import BaseKernel
 from kernels.variants.strict_kernel import StrictKernel
-from kernels.jurisdiction.policy import JurisdictionPolicy
 
 
 class KernelRequestHandler(BaseHTTPRequestHandler):

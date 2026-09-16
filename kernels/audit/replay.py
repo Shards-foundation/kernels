@@ -7,8 +7,8 @@ the hash chain computation and checking for violations.
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from kernels.common.hashing import compute_chain_hash, genesis_hash
 from kernels.common.codec import serialize_for_audit
+from kernels.common.hashing import compute_chain_hash, genesis_hash
 
 
 @dataclass
@@ -28,7 +28,8 @@ def replay_and_verify(
     """Replay and verify an audit ledger.
 
     Recomputes the hash chain from the entries and verifies that each
-    entry's hash matches the computed value.
+    entry's hash matches the computed value. All fields included in the
+    ledger's hash preimage are replayed, including permit metadata.
 
     Args:
         entries: List of audit entry dictionaries.
@@ -45,7 +46,6 @@ def replay_and_verify(
     prev_hash = genesis_hash()
 
     for i, entry in enumerate(entries):
-        # Verify prev_hash matches expected
         entry_prev_hash = entry.get("prev_hash", "")
         if entry_prev_hash != prev_hash:
             errors.append(
@@ -53,7 +53,13 @@ def replay_and_verify(
                 f"Expected {prev_hash[:16]}..., got {entry_prev_hash[:16]}..."
             )
 
-        # Recompute entry hash
+        # Keep the replay hash preimage exactly aligned with AuditLedger.append.
+        # Permit fields are part of the committed hash and therefore must be
+        # included here or valid permit-bearing entries cannot be verified.
+        denial_reasons = entry.get("permit_denial_reasons")
+        if denial_reasons is not None:
+            denial_reasons = tuple(denial_reasons)
+
         entry_data = serialize_for_audit(
             request_id=entry.get("request_id", ""),
             actor=entry.get("actor", ""),
@@ -66,6 +72,14 @@ def replay_and_verify(
             params_hash=entry.get("params_hash"),
             evidence_hash=entry.get("evidence_hash"),
             error=entry.get("error"),
+            permit_digest=entry.get("permit_digest"),
+            permit_verification=entry.get("permit_verification"),
+            permit_denial_reasons=denial_reasons,
+            proposal_hash=entry.get("proposal_hash"),
+            permit_nonce=entry.get("permit_nonce"),
+            permit_issuer=entry.get("permit_issuer"),
+            permit_subject=entry.get("permit_subject"),
+            permit_max_executions=entry.get("permit_max_executions"),
         )
 
         computed_hash = compute_chain_hash(prev_hash, entry_data)
@@ -77,10 +91,8 @@ def replay_and_verify(
                 f"Computed {computed_hash[:16]}..., got {entry_hash[:16]}..."
             )
 
-        # Update prev_hash for next iteration
         prev_hash = entry_hash
 
-    # Verify root hash if provided
     if expected_root_hash is not None and prev_hash != expected_root_hash:
         errors.append(
             f"Root hash mismatch. "
@@ -104,7 +116,6 @@ def verify_evidence_bundle(bundle: dict[str, Any]) -> ReplayResult:
 
     is_valid, errors = replay_and_verify(entries, expected_root)
 
-    # Compute actual root hash
     if entries:
         computed_root = entries[-1].get("entry_hash", genesis_hash())
     else:

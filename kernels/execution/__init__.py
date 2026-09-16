@@ -1,7 +1,7 @@
 """Execution dispatcher and tool registry for Kernels."""
 
-from kernels.execution.tools import ToolRegistry, Tool
 from kernels.execution.dispatcher import Dispatcher, ExecutionResult
+from kernels.execution.tools import Tool, ToolRegistry
 
 __all__ = [
     "ToolRegistry",

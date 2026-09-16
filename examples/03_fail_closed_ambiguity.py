@@ -81,9 +81,7 @@ def main() -> None:
     for case in test_cases:
         print(f"\n[{case['name']}]")
         request = case["request"]
-        print(
-            f"  Intent: {repr(request.intent[:50])}{'...' if len(request.intent) > 50 else ''}"
-        )
+        print(f"  Intent: {repr(request.intent[:50])}{'...' if len(request.intent) > 50 else ''}")
 
         receipt = kernel.submit(request)
 

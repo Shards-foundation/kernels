@@ -10,7 +10,6 @@ The dual-channel kernel requires both intent and constraints:
 from kernels.common.types import KernelConfig, KernelRequest
 from kernels.variants.base import BaseKernel
 
-
 REQUIRED_CONSTRAINT_KEYS = frozenset({"scope", "non_goals", "success_criteria"})
 
 
@@ -66,9 +65,7 @@ class DualChannelKernel(BaseKernel):
         # Check for required constraint keys
         missing_keys = REQUIRED_CONSTRAINT_KEYS - set(constraints.keys())
         if missing_keys:
-            errors.append(
-                f"Missing required constraint keys: {', '.join(sorted(missing_keys))}"
-            )
+            errors.append(f"Missing required constraint keys: {', '.join(sorted(missing_keys))}")
 
         # Validate constraint values are not empty
         for key in REQUIRED_CONSTRAINT_KEYS:

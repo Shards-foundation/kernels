@@ -26,15 +26,9 @@ def _sample_entry(seq: int) -> dict[str, object]:
 def test_threadsafe_nonce_registry_enforces_max_executions() -> None:
     registry = ThreadSafeNonceRegistry()
 
-    assert registry.check_and_record(
-        "nonce-1", "issuer", "subject", "permit-1", 2, 1000
-    )
-    assert registry.check_and_record(
-        "nonce-1", "issuer", "subject", "permit-1", 2, 1001
-    )
-    assert not registry.check_and_record(
-        "nonce-1", "issuer", "subject", "permit-1", 2, 1002
-    )
+    assert registry.check_and_record("nonce-1", "issuer", "subject", "permit-1", 2, 1000)
+    assert registry.check_and_record("nonce-1", "issuer", "subject", "permit-1", 2, 1001)
+    assert not registry.check_and_record("nonce-1", "issuer", "subject", "permit-1", 2, 1002)
 
     stats = registry.stats()
     assert stats["size"] == 1

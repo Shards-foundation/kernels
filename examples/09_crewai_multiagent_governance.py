@@ -46,10 +46,9 @@ import os
 
 # KERNELS imports
 from kernels.common.types import KernelConfig, VirtualClock
-from kernels.variants.strict_kernel import StrictKernel
 from kernels.integrations.crewai_adapter import CrewAIAdapter
 from kernels.permits import PermitBuilder
-
+from kernels.variants.strict_kernel import StrictKernel
 
 # ============================================================================
 # Simulated Tool Implementations
@@ -317,9 +316,7 @@ def main():
 
     # Analyst creates report
     print("Analyst creates internal report...")
-    result = analyst_report._run(
-        title="AI Governance Analysis", content="[analysis results]"
-    )
+    result = analyst_report._run(title="AI Governance Analysis", content="[analysis results]")
     print("✓ ALLOWED (no permit needed)")
     print(f"  Result: {result}")
     print()

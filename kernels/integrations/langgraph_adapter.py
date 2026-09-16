@@ -36,9 +36,9 @@ Author: KERNELS Team
 License: MIT
 """
 
-from typing import Callable, Optional, Dict, Any, List, TypeVar
-from dataclasses import dataclass
 import uuid
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 
 # Try to import LangGraph components
 try:
@@ -53,9 +53,9 @@ except ImportError:
 
 # KERNELS imports
 from kernels.common.types import (
+    Decision,
     KernelRequest,
     ToolCall,
-    Decision,
 )
 from kernels.permits import PermitToken
 from kernels.variants.base import BaseKernel
@@ -148,9 +148,7 @@ class LangGraphAdapter:
             enforce_invariants: Enforce workflow invariants (halt on violation)
         """
         if not LANGGRAPH_AVAILABLE:
-            raise ImportError(
-                "LangGraph is not installed. Install with: pip install langgraph"
-            )
+            raise ImportError("LangGraph is not installed. Install with: pip install langgraph")
 
         self.kernel = kernel
         self.actor = actor

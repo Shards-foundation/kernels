@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+
 from kernels._version import __version__
 
 
@@ -28,18 +29,14 @@ def main() -> int:
     )
 
     # Validate command
-    validate_parser = subparsers.add_parser(
-        "validate", help="Validate a request JSON file"
-    )
+    validate_parser = subparsers.add_parser("validate", help="Validate a request JSON file")
     validate_parser.add_argument(
         "request_file",
         help="Path to JSON file containing request",
     )
 
     # Replay command
-    replay_parser = subparsers.add_parser(
-        "replay", help="Replay and verify an audit ledger"
-    )
+    replay_parser = subparsers.add_parser("replay", help="Replay and verify an audit ledger")
     replay_parser.add_argument(
         "ledger_file",
         help="Path to JSON file containing audit ledger",
@@ -106,11 +103,12 @@ def _cmd_info(variant: str) -> int:
 def _cmd_validate(request_file: str) -> int:
     """Validate a request JSON file."""
     import json
+
     from kernels.common.types import KernelRequest
     from kernels.common.validate import validate_request
 
     try:
-        with open(request_file, "r") as f:
+        with open(request_file) as f:
             data = json.load(f)
     except FileNotFoundError:
         print(f"Error: File not found: {request_file}", file=sys.stderr)
@@ -145,10 +143,11 @@ def _cmd_validate(request_file: str) -> int:
 def _cmd_replay(ledger_file: str) -> int:
     """Replay and verify an audit ledger."""
     import json
+
     from kernels.audit.replay import replay_and_verify
 
     try:
-        with open(ledger_file, "r") as f:
+        with open(ledger_file) as f:
             entries = json.load(f)
     except FileNotFoundError:
         print(f"Error: File not found: {ledger_file}", file=sys.stderr)

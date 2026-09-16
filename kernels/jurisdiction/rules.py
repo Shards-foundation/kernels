@@ -6,8 +6,8 @@ Rules return error messages if violated, or an empty list if passed.
 
 from dataclasses import dataclass
 
-from kernels.common.types import KernelRequest, ToolCall
 from kernels.common.codec import serialize_deterministic
+from kernels.common.types import KernelRequest, ToolCall
 from kernels.jurisdiction.policy import JurisdictionPolicy
 
 
@@ -19,9 +19,7 @@ class PolicyResult:
     violations: list[str]
 
 
-def check_actor_allowed(
-    request: KernelRequest, policy: JurisdictionPolicy
-) -> list[str]:
+def check_actor_allowed(request: KernelRequest, policy: JurisdictionPolicy) -> list[str]:
     """Check if the request actor is allowed by policy.
 
     Args:
@@ -63,9 +61,7 @@ def check_tool_allowed(request: KernelRequest, policy: JurisdictionPolicy) -> li
     return []
 
 
-def check_required_fields(
-    request: KernelRequest, policy: JurisdictionPolicy
-) -> list[str]:
+def check_required_fields(request: KernelRequest, policy: JurisdictionPolicy) -> list[str]:
     """Check if all required fields are present in the request.
 
     Args:
@@ -109,19 +105,14 @@ def check_param_size(request: KernelRequest, policy: JurisdictionPolicy) -> list
         serialized = serialize_deterministic(request.params)
         size = len(serialized.encode("utf-8"))
         if size > policy.max_param_bytes:
-            return [
-                f"Params size ({size} bytes) exceeds maximum "
-                f"({policy.max_param_bytes} bytes)"
-            ]
+            return [f"Params size ({size} bytes) exceeds maximum ({policy.max_param_bytes} bytes)"]
     except Exception as e:
         return [f"Failed to serialize params: {e}"]
 
     return []
 
 
-def check_intent_length(
-    request: KernelRequest, policy: JurisdictionPolicy
-) -> list[str]:
+def check_intent_length(request: KernelRequest, policy: JurisdictionPolicy) -> list[str]:
     """Check if intent length is within limits.
 
     Args:
@@ -133,8 +124,7 @@ def check_intent_length(
     """
     if request.intent and len(request.intent) > policy.max_intent_length:
         return [
-            f"Intent length ({len(request.intent)}) exceeds maximum "
-            f"({policy.max_intent_length})"
+            f"Intent length ({len(request.intent)}) exceeds maximum ({policy.max_intent_length})"
         ]
     return []
 

@@ -1,0 +1,44 @@
+name: Codex Ruff Repair
+
+on:
+  push:
+    branches:
+      - codex/closed-loop-product-hardening
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: codex/closed-loop-product-hardening
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Ruff
+        run: python -m pip install "ruff==0.14.11"
+
+      - name: Apply safe Ruff fixes
+        run: |
+          ruff check . --fix
+          ruff format .
+
+      - name: Commit repairs
+        run: |
+          if git diff --quiet; then
+            echo "No Ruff changes required."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- '*.py'
+          git commit -m "style: apply Ruff autofixes"
+          git push origin HEAD:codex/closed-loop-product-hardening

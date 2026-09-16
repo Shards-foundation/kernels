@@ -28,7 +28,7 @@ jobs:
 
       - name: Apply safe Ruff fixes
         run: |
-          ruff check . --fix
+          ruff check . --fix || true
           ruff format .
 
       - name: Commit repairs

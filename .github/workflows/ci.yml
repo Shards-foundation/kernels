@@ -57,3 +57,20 @@ jobs:
 
       - name: Build package
         run: python -m build
+
+      - name: Verify built wheel is self-contained
+        run: |
+          python -m venv .tmp/wheel-smoke
+          .tmp/wheel-smoke/bin/python -m pip install --no-deps dist/*.whl
+          cd /tmp
+          .tmp/wheel-smoke/bin/python - <<'PY'
+          import implementations
+          import kernels
+          from implementations.permits_threadsafe import ThreadSafeNonceRegistry
+          from implementations.storage import SQLiteAuditStorage
+
+          assert kernels.__version__
+          assert ThreadSafeNonceRegistry is not None
+          assert SQLiteAuditStorage is not None
+          print("Installed wheel import smoke passed")
+          PY

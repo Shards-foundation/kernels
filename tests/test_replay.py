@@ -2,9 +2,9 @@
 
 import unittest
 
-from kernels.common.types import Decision, KernelState
 from kernels.audit.ledger import AuditLedger
 from kernels.audit.replay import replay_and_verify, verify_evidence_bundle
+from kernels.common.types import Decision, KernelState
 
 
 class TestReplay(unittest.TestCase):
@@ -57,6 +57,34 @@ class TestReplay(unittest.TestCase):
         self.assertTrue(is_valid)
         self.assertEqual(errors, [])
 
+    def test_permit_entry_valid(self) -> None:
+        """Permit-bearing entries verify against the same hash preimage as the ledger."""
+        self.ledger.append(
+            request_id="req-permit",
+            actor="agent1",
+            intent="execute echo",
+            decision=Decision.ALLOW,
+            state_from=KernelState.IDLE,
+            state_to=KernelState.IDLE,
+            ts_ms=1000,
+            tool_name="echo",
+            params={"text": "hello"},
+            permit_digest="permit-123",
+            permit_verification="ALLOW",
+            permit_denial_reasons=tuple(),
+            proposal_hash="proposal-456",
+            permit_nonce="nonce-789",
+            permit_issuer="operator1",
+            permit_subject="agent1",
+            permit_max_executions=3,
+        )
+
+        entries = self.ledger.to_list()
+        is_valid, errors = replay_and_verify(entries)
+
+        self.assertTrue(is_valid)
+        self.assertEqual(errors, [])
+
     def test_tampered_entry_detected(self) -> None:
         """Tampered entry is detected."""
         self.ledger.append(
@@ -91,7 +119,7 @@ class TestReplay(unittest.TestCase):
             )
 
         entries = self.ledger.to_list()
-        entries[1]["prev_hash"] = "0" * 64  # Break the chain
+        entries[1]["prev_hash"] = "0" * 64
 
         is_valid, errors = replay_and_verify(entries)
 

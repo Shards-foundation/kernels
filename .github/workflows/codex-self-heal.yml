@@ -83,5 +83,4 @@ PY
               repo: context.repo.repo,
               title: `Self-heal: ${context.payload.workflow_run.name} failed`,
               body: `${body}\n\n\`\`\`json\n${JSON.stringify(taxonomy, null, 2)}\n\`\`\``,
-              labels: ['codex', 'self-heal', taxonomy.failure_type]
             });
